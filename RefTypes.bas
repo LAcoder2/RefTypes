@@ -11,7 +11,8 @@
 ' MIT License                                                                                                                    '
 '                                                                                                                                '
 ' Copyright (c) 2025 Benjamin Dovidio (WNKLER)                                                                                   '
-'                                                                                                                                '
+' Edited by Alexey Leonov (testuser2) 07.2025
+'
 ' Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated                   '
 ' documentation files (the "Software"), to deal in the Software without restriction, including without limitation                '
 ' the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,                   '
@@ -331,6 +332,7 @@ Property Set RefVar(ByVal Target As LongPtr, ByRef RefVar As Variant)
     vRef_SA.pvData = Target
     Set vRef(0) = RefVar
 End Property
+
 Property Get RefUnk(ByVal Target As LongPtr) As IUnknown
     If IsInitialized Then Else Initialize
     unkRef_SA.pvData = Target
@@ -341,6 +343,7 @@ Property Set RefUnk(ByVal Target As LongPtr, ByVal RefUnk As IUnknown)
     unkRef_SA.pvData = Target
     Set unkRef(0) = RefUnk
 End Property
+
 'Property Get RefDec(ByVal Target As LongPtr) As Variant
 '    If IsInitialized Then Else Initialize
 '    dcRef_SA.pvData = Target
@@ -361,6 +364,7 @@ Property Let RefByte(ByVal Target As LongPtr, ByVal RefByte As Byte)
     bRef_SA.pvData = Target
     bRef(0) = RefByte
 End Property
+
     Property Get RefLngLng(ByVal Target As LongPtr) As LongLong
         If IsInitialized Then Else Initialize
         llRef_SA.pvData = Target
@@ -396,19 +400,13 @@ Property Let RefLngPtr2(ByVal Target As LongPtr, ByVal RefLngPtr2 As LongPtr)
     lpRef2_SA2.pvData = Target
     lpRef2(0) = RefLngPtr2
 End Property
+'перемещение указателя (передача владения)
 Sub MovePtr(ByVal pDst As LongPtr, ByVal pSrc As LongPtr)
     If IsInitialized Then Else Initialize
     lpRef_SA.pvData = pDst
     lpRef2_SA.pvData = pSrc
     lpRef(0) = lpRef2(0)
     lpRef2(0) = 0
-End Sub
-Private Sub TestStrCompVBA()
-    Dim s1$, s2$, lres&, lres2&
-    s1 = "abcd"
-    s2 = "abc"
-    lres = StrCompVBA(s2, s1)
-    lres2 = StrComp(s2, s1)
 End Sub
 Private Function StrCompVBA(str1$, str2$) As Long
     Dim len1&, len2&, lenMin&
@@ -429,17 +427,7 @@ Private Function StrCompVBA(str1$, str2$) As Long
     
     StrCompVBA = dif
 End Function
-Private Sub TestInStrRev2()
-    Dim sCheck$, sMatch$, lres&, lres2&, cmp As VbCompareMethod
-    sCheck = "rtoiutPoIpkj"
-    sMatch = "TpoI"
-    cmp = TextCompare
-    lres = InStrRev2(sCheck, sMatch, 9, vbTextCompare, 6)
-    lres2 = InStrRev2B(sCheck, sMatch, 18, vbTextCompare, 11)
-    lres = InStr2(sCheck, sMatch, 6, cmp, 9)
-    lres2 = InStr2B(sCheck, sMatch, 11, cmp, 18)
-    Stop
-End Sub
+'аналог instr$() с дополнителным параметром lStop, чтобы указывать позицию окончания поиска.
 Function InStr2(sCheck$, sMatch$, Optional ByVal lStart As Long = 1, Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = -1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
     If IsInitialized Then Else Initialize
@@ -616,11 +604,12 @@ Function InStrRev2B(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, Option
 skip:
     Next
 End Function
-Sub MemLset(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
+'Аналог CopyMemory
+Sub MemLSet(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
     Dim sDst$, sSrc$, lTmp&
     Dim s1$, s2$
     If IsInitialized Then Else Initialize
-    Size = Size - 4
+    Size = Size - 4: If Size < 0 Then Exit Sub
     
     lRef_SA.pvData = pSrc
     lTmp = lRef(0)
@@ -639,13 +628,18 @@ Sub MemLset(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
     lRef2(0) = lTmp
 End Sub
 
-Private Sub Test_MemLset()
+Private Sub Test_MemLSet()
     Dim s1$, s2$
+    Initialize
     s1 = "1111111111"
     s2 = "2222"
 '    MidB$(s1, 7, 8) = s2
-    MemLset StrPtr(s1) + 6, StrPtr(s2), 8
+    MemLSet StrPtr(s1) + 6, StrPtr(s2), 8
+    Debug.Print s1 '1112222111
     
+    Dim b1(2) As Byte, b2(2) As Byte
+    b1(0) = 1: b1(1) = 2: b1(2) = 3
+'    MemLSet VarPtr(b2(0)), VarPtr(b1(0)), 3 '< 3 does not work
 End Sub
 Private Sub TestMovePtr()
     Dim s1$, s2$
@@ -661,6 +655,24 @@ Private Sub TestMovePtr()
     
     Stop 'см. Immediate
     MovePtr VarPtr(lp) + LenB(lp), VarPtr(lp) + LenB(lp) * 2
+    Stop
+End Sub
+Private Sub TestStrCompVBA()
+    Dim s1$, s2$, lres&, lres2&
+    s1 = "abcd"
+    s2 = "abc"
+    lres = StrCompVBA(s2, s1)
+    lres2 = StrComp(s2, s1)
+End Sub
+Private Sub TestInStrRev2()
+    Dim sCheck$, sMatch$, lres&, lres2&, cmp As VbCompareMethod
+    sCheck = "rtoiutPoIpkj"
+    sMatch = "TpoI"
+    cmp = TextCompare
+    lres = InStrRev2(sCheck, sMatch, 9, vbTextCompare, 6)
+    lres2 = InStrRev2B(sCheck, sMatch, 18, vbTextCompare, 11)
+    lres = InStr2(sCheck, sMatch, 6, cmp, 9)
+    lres2 = InStr2B(sCheck, sMatch, 11, cmp, 18)
     Stop
 End Sub
 Private Sub TestiRef()
