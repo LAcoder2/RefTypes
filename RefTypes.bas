@@ -110,8 +110,8 @@ Public lpRef()    As LongPtr:     Private Const lpRefNum = 19
 Public lpRef2()   As LongPtr:     Private Const lpRef2Num = 20
 Public iMap1()    As Integer:     Private Const iMap1Num = 21 'мапперы строк (с индексацией от 1)
 Public iMap2()    As Integer:     Private Const iMap2Num = 22
-Public bMap1()    As Byte:     Private Const bMap1Num = 23
-Public bMap2()    As Byte:     Private Const bMap2Num = 24
+Public bMap1()    As Byte:        Private Const bMap1Num = 23
+Public bMap2()    As Byte:        Private Const bMap2Num = 24
 ' <End of proxied memory block>
 '##################################################################'
 '******************************************************************'
