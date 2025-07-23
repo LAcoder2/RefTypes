@@ -1,4 +1,4 @@
-Attribute VB_Name = "RefTypes"
+'Attribute VB_Name = "RefTypes"
 '================================================================================================================================'
 ' RefTypes                                                                                                                       '
 '--------------------------------------------------------                                                                        '
@@ -29,12 +29,16 @@ Option Explicit
 
 #If Win64 = 1 Then
     Private Const Win64 As Integer = 1
+    Private Const varSz As LongPtr = 24
+    Private Const ptrSz As LongPtr = 8
 #Else
     Private Const Win64 As Integer = 0
     Public Type LongLong
         L0x0 As Long
         L0x4 As Long
     End Type
+    Private Const varSz As Long = 16
+    Private Const ptrSz As Long = 4
 #End If
 
 #If VBA7 = 0 Then
@@ -43,6 +47,7 @@ Option Explicit
 #End If
 
 Private Const LPTR_SIZE As Long = 4 + (Win64 * 4)
+Private Const FADF_FIXEDSIZE_AUTO = &H11&
 '*********************************************************************************'
 ' This section just sets up the array bounds according to the four `UserDefined`  '
 ' parameters. If you already know the correct bounds, you can just hardcode them. '
@@ -51,9 +56,10 @@ Private Const LPROXY_SIZE      As Long = 1         '// UserDefined (should be an
 Private Const LELEMENT_SIZE    As Long = LPTR_SIZE '// UserDefined (usually should be <PTR_SIZE>)
 Private Const LSIZE_PROXIED    As Long = LELEMENT_SIZE - LPROXY_SIZE
 Private Const LBLOCK_STEP_SIZE As Long = LELEMENT_SIZE * LSIZE_PROXIED
+Private Const Proxy_Count = 25
 
 Private Enum BOUNDS_HELPER:
-  [_BLOCK_ALLOCATION_SIZE] = 14 * LPTR_SIZE        '// UserDefined (the size of the region being proxied)
+  [_BLOCK_ALLOCATION_SIZE] = Proxy_Count * LPTR_SIZE      '// UserDefined (the size of the region being proxied)
   [_0x0_ADDRESS_ALIGNMENT] = 0                     '// UserDefined (<BLOCK_ALLOCATION_ADDRESS> Mod <PTR_SIZE>)
   [_SIZE_OF_ALIGNED_BLOCK] = ([_0x0_ADDRESS_ALIGNMENT] - LPTR_SIZE) * ([_0x0_ADDRESS_ALIGNMENT] > 0) + [_BLOCK_ALLOCATION_SIZE]
   [_ELEMENT_SIZE_OF_PROXY] = ([_SIZE_OF_ALIGNED_BLOCK] + LBLOCK_STEP_SIZE - 1) \ LBLOCK_STEP_SIZE
@@ -64,67 +70,119 @@ Private Const LELEMENTS_LBOUND As Long = [_ELEMENT_SIZE_OF_PROXY] * -1
 Private Const LELEMENTS_UBOUND As Long = [_ELEMENT_SIZE_OF_BLOCK] + (LELEMENTS_LBOUND < 0)
 Private Const LBLOCK_OFFSET    As Long = [_ELEMENT_SIZE_OF_PROXY] * LELEMENT_SIZE '// Relative to VarPtr(<MemoryProxyVariable>)
 Private Const LBLOCK_SIZE      As Long = [_ELEMENT_SIZE_OF_BLOCK] * LELEMENT_SIZE '
-'*********************************************************************************'
 
+'*********************************************************************************'
 Private Type ProxyElement               '// This could be anything. I have it as an array of bytes only for the
     ProxyAlloc(LPROXY_SIZE - 1) As Byte '// convenience of binding its size to a constant, and for maximum granularity.
 End Type                                '// Although, be aware that this structure determines MemoryProxy alignment.
-
 Private Type MemoryProxy                                           '// The declared type of `Elements()` can be any of
     Elements(LELEMENTS_LBOUND To LELEMENTS_UBOUND) As ProxyElement '// the following: Enum, UDT, or Alias (typedef)
 End Type                                                           '// NOTE: A ProxyElement's Type must be smaller
-                                                                   '// than the size of the Element it represents.
+
+'// than the Type of the Element it represents.
 '******************************************************************'
 ' When passed to `InitByProxy()`, the `Initializer.Elements` array '
 ' provides access to fourteen, pointer-sized elements immmediately '
 ' following the `Initializer` variable's memory allocation.        '
-
-Private Initializer   As MemoryProxy
+'##################################################################'
+Public Initializer   As MemoryProxy
 ' <Memory proxied by `Initializer`>
-Private m_RefInt()    As Integer
-Private m_RefLng()    As Long
-Private m_RefSng()    As Single
-Private m_RefDbl()    As Double
-Private m_RefCur()    As Currency
-Private m_RefDate()   As Date
-Private m_RefStr()    As String
-Private m_RefObj()    As Object
-Private m_RefBool()   As Boolean
-Private m_RefVar()    As Variant
-Private m_RefUnk()    As IUnknown
-'Private m_RefDec()    As Variant
-Private m_RefByte()   As Byte
-Private m_RefLngLng() As LongLong
-Private m_RefLngPtr() As LongPtr
+Public iRef()     As Integer:     Private Const iRefNum = 0
+Public iRef2()    As Integer:     Private Const iRef2Num = 1
+Public lRef()     As Long:        Private Const lRefNum = 2
+Public lRef2()    As Long:        Private Const lRef2Num = 3
+Public snRef()    As Single:      Private Const snRefNum = 4
+Public dRef()     As Double:      Private Const dRefNum = 5
+Public cRef()     As Currency:    Private Const cRefNum = 6
+Public cRef2()    As Currency:    Private Const cRef2Num = 7
+Public dtRef()    As Date:        Private Const dtRefNum = 8
+Public sRef()     As String:      Private Const sRefNum = 9
+Public sRef2()    As String:      Private Const sRef2Num = 10
+Public oRef()     As Object:      Private Const oRefNum = 11
+Public blRef()    As Boolean:     Private Const blRefNum = 12
+Public vRef()     As Variant:     Private Const vRefNum = 13
+Public vRef2()    As Variant:     Private Const vRef2Num = 14
+Public unkRef()   As IUnknown:    Private Const unkRefNum = 15
+Public bRef()     As Byte:        Private Const bRefNum = 16
+Public bRef2()    As Byte:        Private Const bRef2Num = 17
+Public llRef()    As LongLong:    Private Const llRefNum = 18
+Public lpRef()    As LongPtr:     Private Const lpRefNum = 19
+Public lpRef2()   As LongPtr:     Private Const lpRef2Num = 20
+Public iMap1()    As Integer:     Private Const iMap1Num = 21 'мапперы строк (с индексацией от 1)
+Public iMap2()    As Integer:     Private Const iMap2Num = 22
+Public bMap1()    As Byte:     Private Const bMap1Num = 23
+Public bMap2()    As Byte:     Private Const bMap2Num = 24
 ' <End of proxied memory block>
-'*******************************************************************'
-                                                                                               
+'##################################################################'
+'******************************************************************'
 '*************************************************************************************************'
 ' Inspired by Cristian Buse's `VBA-MemoryTools` <https://github.com/cristianbuse/VBA-MemoryTools> '
 ' Arbitrary memory access is achieved via a carefully constructed SAFEARRAY `Descriptor` struct.  '
-
-Private m_cDims       As Integer
-Private m_fFeatures   As Integer
-Private m_cbElements  As Long
-Private m_cLocks      As Long
-Private m_pvData      As LongPtr
-Private m_cElements   As Long
-Private m_lLbound     As Long
+Public iRef_SA As SAFEARRAY1D, _
+       iRef2_SA As SAFEARRAY1D, _
+       lRef_SA As SAFEARRAY1D, _
+       lRef2_SA As SAFEARRAY1D, _
+       snRef_SA As SAFEARRAY1D, _
+       dRef_SA As SAFEARRAY1D, _
+       cRef_SA As SAFEARRAY1D, _
+       cRef2_SA As SAFEARRAY1D, _
+       dtRef_SA As SAFEARRAY1D, _
+       sRef_SA As SAFEARRAY1D, _
+       sRef2_SA As SAFEARRAY1D, _
+       oRef_SA As SAFEARRAY1D, _
+       blRef_SA As SAFEARRAY1D, _
+       vRef_SA As SAFEARRAY1D, _
+       vRef2_SA As SAFEARRAY1D, _
+       unkRef_SA As SAFEARRAY1D, _
+       bRef_SA As SAFEARRAY1D, _
+       bRef2_SA As SAFEARRAY1D, _
+       llRef_SA As SAFEARRAY1D, _
+       lpRef_SA As SAFEARRAY1D, _
+       lpRef2_SA As SAFEARRAY1D, _
+       iMap1_SA As SAFEARRAY1D, _
+       iMap2_SA As SAFEARRAY1D, _
+       bMap1_SA As SAFEARRAY1D, _
+       bMap2_SA As SAFEARRAY1D
 '*************************************************************************************************'
 Private IsInitialized As Boolean
 
-Public Sub Initialize()
+
+Sub Initialize()
     If IsInitialized Then Exit Sub
     
-    m_cDims = 1
-    m_fFeatures = &H11 'FADF_FIXEDSIZE_AUTO
-    m_cbElements = 0   'idk, might help prevent deallocation
-    m_cLocks = 1
-    m_pvData = 0
-    m_cElements = 1
-    m_lLbound = 0
-
-    InitByProxy Initializer.Elements
+    With bRef_SA
+      .cDims = 1
+      .fFeatures = FADF_FIXEDSIZE_AUTO
+      .cLocks = 1
+      .cbElements = 1
+      .Bounds.cCount = 1
+    End With
+    bRef2_SA = bRef_SA
+    iRef_SA = bRef_SA:    iRef_SA.cbElements = 2 '(LenB(iRef(0))
+    iRef2_SA = bRef_SA:   iRef2_SA.cbElements = 2
+    blRef_SA = bRef_SA:   blRef_SA.cbElements = 2
+    lRef_SA = bRef_SA:    lRef_SA.cbElements = 4
+    lRef2_SA = bRef_SA:   lRef2_SA.cbElements = 4
+    cRef_SA = bRef_SA:    cRef_SA.cbElements = 8
+    cRef2_SA = bRef_SA:   cRef2_SA.cbElements = 8
+    snRef_SA = bRef_SA:   snRef_SA.cbElements = 4
+    dRef_SA = bRef_SA:    dRef_SA.cbElements = 8
+    dtRef_SA = bRef_SA:   dtRef_SA.cbElements = 8
+    sRef_SA = bRef_SA:    sRef_SA.cbElements = ptrSz  ':    sRef_SA.fFeatures = 402
+    sRef2_SA = bRef_SA:   sRef2_SA.cbElements = ptrSz ':    sRef2_SA.fFeatures = 402
+    vRef_SA = bRef_SA:    vRef_SA.cbElements = varSz
+    vRef2_SA = bRef_SA:   vRef2_SA.cbElements = varSz
+    oRef_SA = bRef_SA:    oRef_SA.cbElements = ptrSz
+    unkRef_SA = bRef_SA:  unkRef_SA.cbElements = ptrSz
+    llRef_SA = bRef_SA:   llRef_SA.cbElements = LenB(llRef(0))
+    lpRef_SA = bRef_SA:   lpRef_SA.cbElements = ptrSz
+    lpRef2_SA = bRef_SA:  lpRef2_SA.cbElements = ptrSz
+    iMap1_SA = bRef_SA:   iMap1_SA.cbElements = 2: iMap1_SA.Bounds.lBound = 1
+    iMap2_SA = bRef_SA:   iMap2_SA.cbElements = 2: iMap2_SA.Bounds.lBound = 1
+    bMap1_SA = bRef_SA:   bMap1_SA.cbElements = 1: bMap1_SA.Bounds.lBound = 1
+    bMap2_SA = bRef_SA:   bMap2_SA.cbElements = 1: bMap2_SA.Bounds.lBound = 1
+    
+    InitAllByProxy Initializer.Elements, iRef_SA, Proxy_Count
     
     IsInitialized = True
 End Sub
@@ -146,188 +204,520 @@ End Sub
 ' However, since Fixed-Length-Strings have no alignment, the starting position of '
 ' an element and the starting position of its proxy will always be the same.      '
 '*********************************************************************************'
-Private Sub InitByProxy(ByRef ProxyElements() As LONG_PTR)
-    Dim pcDims As LongPtr
-    pcDims = VarPtr(m_cDims)
+Private Sub InitAllByProxy(ProxyElements() As LONG_PTR, SA1 As SAFEARRAY1D, ByVal proxyCount&)
+    Dim i&, pSA1 As LongPtr, szSA As Long
     
-    Dim i As Long
-    
-    For i = 0& To 13&
-        ProxyElements(i) = pcDims
-    Next i
+    pSA1 = VarPtr(SA1)
+    szSA = LenB(SA1)
+    For i = 0 To proxyCount - 1
+        ProxyElements(i) = pSA1 + i * szSA
+    Next
+End Sub
+Private Sub InitByProxy(ProxyElements() As LONG_PTR, ByVal num As Long, SA As SAFEARRAY1D)
+    ProxyElements(num) = VarPtr(SA)
 End Sub
 
-Public Property Get RefInt(ByVal Target As LongPtr) As Integer
+Property Get RefInt(ByVal Target As LongPtr) As Integer
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    RefInt = m_RefInt(0&)
+    iRef_SA.pvData = Target
+    RefInt = iRef(0)
 End Property
-Public Property Let RefInt(ByVal Target As LongPtr, ByVal RefInt As Integer)
+Property Let RefInt(ByVal Target As LongPtr, ByVal RefInt As Integer)
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    m_RefInt(0&) = RefInt
-End Property
-
-Public Property Get RefLng(ByVal Target As LongPtr) As Long
-    If IsInitialized Then Else Initialize
-    m_pvData = Target
-    RefLng = m_RefLng(0&)
-End Property
-Public Property Let RefLng(ByVal Target As LongPtr, ByVal RefLng As Long)
-    If IsInitialized Then Else Initialize
-    m_pvData = Target
-    m_RefLng(0&) = RefLng
+    iRef_SA.pvData = Target
+    iRef(0) = RefInt
 End Property
 
-Public Property Get RefSng(ByVal Target As LongPtr) As Single
+Property Get RefLng(ByVal Target As LongPtr) As Long
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    RefSng = m_RefSng(0&)
+    lRef_SA.pvData = Target
+    RefLng = lRef(0)
 End Property
-Public Property Let RefSng(ByVal Target As LongPtr, ByVal RefSng As Single)
+Property Let RefLng(ByVal Target As LongPtr, ByVal RefLng As Long)
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    m_RefSng(0&) = RefSng
-End Property
-
-Public Property Get RefDbl(ByVal Target As LongPtr) As Double
-    If IsInitialized Then Else Initialize
-    m_pvData = Target
-    RefDbl = m_RefDbl(0&)
-End Property
-Public Property Let RefDbl(ByVal Target As LongPtr, ByVal RefDbl As Double)
-    If IsInitialized Then Else Initialize
-    m_pvData = Target
-    m_RefDbl(0&) = RefDbl
+    lRef_SA.pvData = Target
+    lRef(0) = RefLng
 End Property
 
-Public Property Get RefCur(ByVal Target As LongPtr) As Currency
+Property Get RefSng(ByVal Target As LongPtr) As Single
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    RefCur = m_RefCur(0&)
+    snRef_SA.pvData = Target
+    RefSng = snRef(0)
 End Property
-Public Property Let RefCur(ByVal Target As LongPtr, ByVal RefCur As Currency)
+Property Let RefSng(ByVal Target As LongPtr, ByVal RefSng As Single)
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    m_RefCur(0&) = RefCur
-End Property
-
-Public Property Get RefDate(ByVal Target As LongPtr) As Date
-    If IsInitialized Then Else Initialize
-    m_pvData = Target
-    RefDate = m_RefDate(0&)
-End Property
-Public Property Let RefDate(ByVal Target As LongPtr, ByVal RefDate As Date)
-    If IsInitialized Then Else Initialize
-    m_pvData = Target
-    m_RefDate(0&) = RefDate
+    snRef_SA.pvData = Target
+    snRef(0) = RefSng
 End Property
 
-Public Property Get RefStr(ByVal Target As LongPtr) As String
+Property Get RefDbl(ByVal Target As LongPtr) As Double
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    RefStr = m_RefStr(0&)
+    dRef_SA.pvData = Target
+    RefDbl = dRef(0)
 End Property
-Public Property Let RefStr(ByVal Target As LongPtr, ByRef RefStr As String)
+Property Let RefDbl(ByVal Target As LongPtr, ByVal RefDbl As Double)
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    m_RefStr(0&) = RefStr
-End Property
-
-Public Property Get RefObj(ByVal Target As LongPtr) As Object
-    If IsInitialized Then Else Initialize
-    m_pvData = Target
-    Set RefObj = m_RefObj(0&)
-End Property
-Public Property Set RefObj(ByVal Target As LongPtr, ByVal RefObj As Object)
-    If IsInitialized Then Else Initialize
-    m_pvData = Target
-    Set m_RefObj(0&) = RefObj
+    dRef_SA.pvData = Target
+    dRef(0) = RefDbl
 End Property
 
-Public Property Get RefBool(ByVal Target As LongPtr) As Boolean
+Property Get RefCur(ByVal Target As LongPtr) As Currency
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    RefBool = m_RefBool(0&)
+    cRef_SA.pvData = Target
+    RefCur = cRef(0)
 End Property
-Public Property Let RefBool(ByVal Target As LongPtr, ByVal RefBool As Boolean)
+Property Let RefCur(ByVal Target As LongPtr, ByVal RefCur As Currency)
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    m_RefBool(0&) = RefBool
-End Property
-
-Public Property Get RefVar(ByVal Target As LongPtr) As Variant
-    If IsInitialized Then Else Initialize
-    m_pvData = Target
-    RefVar = m_RefVar(0&)
-End Property
-Public Property Let RefVar(ByVal Target As LongPtr, ByRef RefVar As Variant)
-    If IsInitialized Then Else Initialize
-    m_pvData = Target
-    m_RefVar(0&) = RefVar
-End Property
-Public Property Set RefVar(ByVal Target As LongPtr, ByRef RefVar As Variant)
-    If IsInitialized Then Else Initialize
-    m_pvData = Target
-    Set m_RefVar(0&) = RefVar
+    cRef_SA.pvData = Target
+    cRef(0) = RefCur
 End Property
 
-Public Property Get RefUnk(ByVal Target As LongPtr) As IUnknown
+Property Get RefDate(ByVal Target As LongPtr) As Date
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    Set RefUnk = m_RefUnk(0&)
+    dtRef_SA.pvData = Target
+    RefDate = dtRef(0)
 End Property
-Public Property Set RefUnk(ByVal Target As LongPtr, ByVal RefUnk As IUnknown)
+Property Let RefDate(ByVal Target As LongPtr, ByVal RefDate As Date)
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    Set m_RefUnk(0&) = RefUnk
+    dtRef_SA.pvData = Target
+    dtRef(0) = RefDate
 End Property
 
-'Public Property Get RefDec(ByVal Target As LongPtr) As Variant
+Property Get RefStr(ByVal Target As LongPtr) As String
+    If IsInitialized Then Else Initialize
+    sRef_SA.pvData = Target
+    RefStr = sRef(0)
+End Property
+Property Let RefStr(ByVal Target As LongPtr, ByRef RefStr As String)
+    If IsInitialized Then Else Initialize
+    sRef_SA.pvData = Target
+    sRef(0) = RefStr
+End Property
+
+Property Get RefObj(ByVal Target As LongPtr) As Object
+    If IsInitialized Then Else Initialize
+    oRef_SA.pvData = Target
+    Set RefObj = oRef(0)
+End Property
+Property Set RefObj(ByVal Target As LongPtr, ByVal RefObj As Object)
+    If IsInitialized Then Else Initialize
+    oRef_SA.pvData = Target
+    Set oRef(0) = RefObj
+End Property
+
+Property Get RefBool(ByVal Target As LongPtr) As Boolean
+    If IsInitialized Then Else Initialize
+    blRef_SA.pvData = Target
+    RefBool = blRef(0)
+End Property
+Property Let RefBool(ByVal Target As LongPtr, ByVal RefBool As Boolean)
+    If IsInitialized Then Else Initialize
+    blRef_SA.pvData = Target
+    blRef(0) = RefBool
+End Property
+
+Property Get RefVar(ByVal Target As LongPtr) As Variant
+    If IsInitialized Then Else Initialize
+    vRef_SA.pvData = Target
+    RefVar = vRef(0)
+End Property
+Property Let RefVar(ByVal Target As LongPtr, ByRef RefVar As Variant)
+    If IsInitialized Then Else Initialize
+    vRef_SA.pvData = Target
+    vRef(0) = RefVar
+End Property
+Property Set RefVar(ByVal Target As LongPtr, ByRef RefVar As Variant)
+    If IsInitialized Then Else Initialize
+    vRef_SA.pvData = Target
+    Set vRef(0) = RefVar
+End Property
+Property Get RefUnk(ByVal Target As LongPtr) As IUnknown
+    If IsInitialized Then Else Initialize
+    unkRef_SA.pvData = Target
+    Set RefUnk = unkRef(0)
+End Property
+Property Set RefUnk(ByVal Target As LongPtr, ByVal RefUnk As IUnknown)
+    If IsInitialized Then Else Initialize
+    unkRef_SA.pvData = Target
+    Set unkRef(0) = RefUnk
+End Property
+'Property Get RefDec(ByVal Target As LongPtr) As Variant
 '    If IsInitialized Then Else Initialize
-'    m_pvData = Target
-'    RefDec = m_RefDec(0&)
+'    dcRef_SA.pvData = Target
+'    RefDec = dcRef(0)
 'End Property
-'Public Property Let RefDec(ByVal Target As LongPtr, ByVal RefDec As Variant)
+'Property Let RefDec(ByVal Target As LongPtr, ByVal RefDec As Variant)
 '    If IsInitialized Then Else Initialize
-'    m_pvData = Target
-'    m_RefDec(0&) = RefDec
-'End Property _
-
-Public Property Get RefByte(ByVal Target As LongPtr) As Byte
+'    dcRef_SA.pvData = Target
+'    dcRef(0) = RefDec
+'End Property '_
+Property Get RefByte(ByVal Target As LongPtr) As Byte
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    RefByte = m_RefByte(0&)
+    bRef_SA.pvData = Target
+    RefByte = bRef(0)
 End Property
-Public Property Let RefByte(ByVal Target As LongPtr, ByVal RefByte As Byte)
+Property Let RefByte(ByVal Target As LongPtr, ByVal RefByte As Byte)
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    m_RefByte(0&) = RefByte
+    bRef_SA.pvData = Target
+    bRef(0) = RefByte
 End Property
-
-    Public Property Get RefLngLng(ByVal Target As LongPtr) As LongLong
+    Property Get RefLngLng(ByVal Target As LongPtr) As LongLong
         If IsInitialized Then Else Initialize
-        m_pvData = Target
-        RefLngLng = m_RefLngLng(0&)
+        llRef_SA.pvData = Target
+        RefLngLng = llRef(0)
     End Property
 #If Win64 = 0 Then
-    Public Property Let RefLngLng(ByVal Target As LongPtr, ByRef RefLngLng As LongLong)
+    Property Let RefLngLng(ByVal Target As LongPtr, ByRef RefLngLng As LongLong)
 #Else
-    Public Property Let RefLngLng(ByVal Target As LongPtr, ByVal RefLngLng As LongLong)
+    Property Let RefLngLng(ByVal Target As LongPtr, ByVal RefLngLng As LongLong)
 #End If
         If IsInitialized Then Else Initialize
-        m_pvData = Target
-        m_RefLngLng(0&) = RefLngLng
+        llRef_SA.pvData = Target
+        llRef(0) = RefLngLng
     End Property
 
-Public Property Get RefLngPtr(ByVal Target As LongPtr) As LongPtr
+Property Get RefLngPtr(ByVal Target As LongPtr) As LongPtr
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    RefLngPtr = m_RefLngPtr(0&)
+    lpRef_SA.pvData = Target
+    RefLngPtr = lpRef(0)
 End Property
-Public Property Let RefLngPtr(ByVal Target As LongPtr, ByVal RefLngPtr As LongPtr)
+Property Let RefLngPtr(ByVal Target As LongPtr, ByVal RefLngPtr As LongPtr)
     If IsInitialized Then Else Initialize
-    m_pvData = Target
-    m_RefLngPtr(0&) = RefLngPtr
+    lpRef_SA.pvData = Target
+    lpRef(0) = RefLngPtr
 End Property
+Property Get RefLngPtr2(ByVal Target As LongPtr) As LongPtr
+    If IsInitialized Then Else Initialize
+    lpRef2_SA.pvData = Target
+    RefLngPtr = lpRef2(0)
+End Property
+Property Let RefLngPtr2(ByVal Target As LongPtr, ByVal RefLngPtr2 As LongPtr)
+    If IsInitialized Then Else Initialize
+    lpRef2_SA2.pvData = Target
+    lpRef2(0) = RefLngPtr2
+End Property
+Sub MovePtr(ByVal pDst As LongPtr, ByVal pSrc As LongPtr)
+    If IsInitialized Then Else Initialize
+    lpRef_SA.pvData = pDst
+    lpRef2_SA.pvData = pSrc
+    lpRef(0) = lpRef2(0)
+    lpRef2(0) = 0
+End Sub
+Private Sub TestStrCompVBA()
+    Dim s1$, s2$, lres&, lres2&
+    s1 = "abcd"
+    s2 = "abc"
+    lres = StrCompVBA(s2, s1)
+    lres2 = StrComp(s2, s1)
+End Sub
+Private Function StrCompVBA(str1$, str2$) As Long
+    Dim len1&, len2&, lenMin&
+    Dim i&, dif&
+    If IsInitialized Then Else Initialize
+    
+    len1 = Len(str1) + 1: len2 = Len(str2) + 1
+    If len1 > len2 Then lenMin = len2 Else lenMin = len1
+    iRef1_SA.pvData = StrPtr(str1)
+    iRef1_SA.Bounds.cCount = lenMin
+    iRef2_SA.pvData = StrPtr(str2)
+    iRef2_SA.Bounds.cCount = lenMin
+    
+    For i = 1 To lenMin
+        dif = iRef1(i) - iRef2(i)
+        If dif Then Exit For
+    Next
+    
+    StrCompVBA = dif
+End Function
+Private Sub TestInStrRev2()
+    Dim sCheck$, sMatch$, lres&, lres2&, cmp As VbCompareMethod
+    sCheck = "rtoiutPoIpkj"
+    sMatch = "TpoI"
+    cmp = TextCompare
+    lres = InStrRev2(sCheck, sMatch, 9, vbTextCompare, 6)
+    lres2 = InStrRev2B(sCheck, sMatch, 18, vbTextCompare, 11)
+    lres = InStr2(sCheck, sMatch, 6, cmp, 9)
+    lres2 = InStr2B(sCheck, sMatch, 11, cmp, 18)
+    Stop
+End Sub
+Function InStr2(sCheck$, sMatch$, Optional ByVal lStart As Long = 1, Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = -1) As Long
+    Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
+    If IsInitialized Then Else Initialize
+    
+    If Compare = vbBinaryCompare Then
+        iMap1_SA.pvData = StrPtr(sCheck)
+        iMap2_SA.pvData = StrPtr(sMatch)
+    Else
+        Dim sTmp1$, sTmp2$
+        MovePtr VarPtr(sTmp1), VarPtr(StrConv(sCheck, vbLowerCase)) + 8 'v2
+        MovePtr VarPtr(sTmp2), VarPtr(StrConv(sMatch, vbLowerCase)) + 8
+        iMap1_SA.pvData = StrPtr(sTmp1)
+        iMap2_SA.pvData = StrPtr(sTmp2)
+    End If
+    lenCheck = Len(sCheck)
+    lenMatch = Len(sMatch)
+    iMap1_SA.Bounds.cCount = lenCheck
+    iMap2_SA.Bounds.cCount = lenMatch
+    If lStop = -1 Then lStop = lenCheck
+    
+    iMatch = iMap2(1)                                                   'v2
+    For i = lStart To lStop - lenMatch + 1
+        If iMap1(i) <> iMatch Then
+        Else
+            k = i
+            For j = 2 To lenMatch
+                k = k + 1
+                If iMap1(k) = iMap2(j) Then Else GoTo skip
+            Next
+            InStr2 = i: Exit Function
+        End If
+skip:
+    Next
+End Function
+Function InStr2B(sCheck$, sMatch$, Optional ByVal lStart As Long = 1, _
+    Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = -1) As Long
+    Dim i&, j&, k&, lenCheck&, lenMatch&, bMatch As Byte
+    If IsInitialized Then Else Initialize
+    
+    If Compare = vbBinaryCompare Then
+        bMap1_SA.pvData = StrPtr(sCheck)
+        bMap2_SA.pvData = StrPtr(sMatch)
+    Else
+        Dim sTmp1$, sTmp2$
+        MovePtr VarPtr(sTmp1), VarPtr(StrConv(sCheck, vbLowerCase)) + 8 'v2
+        MovePtr VarPtr(sTmp2), VarPtr(StrConv(sMatch, vbLowerCase)) + 8
+        bMap1_SA.pvData = StrPtr(sTmp1)
+        bMap2_SA.pvData = StrPtr(sTmp2)
+    End If
+    lenCheck = LenB(sCheck)
+    lenMatch = LenB(sMatch)
+    bMap1_SA.Bounds.cCount = lenCheck
+    bMap2_SA.Bounds.cCount = lenMatch
+    If lStop = -1 Then lStop = lenCheck
+    
+    bMatch = bMap2(1)                                                   'v2
+    For i = lStart To lStop - lenMatch + 1
+        If bMap1(i) <> bMatch Then
+        Else
+            k = i
+            For j = 2 To lenMatch
+                k = k + 1
+                If bMap1(k) = bMap2(j) Then Else GoTo skip
+            Next
+            InStr2B = i: Exit Function
+        End If
+skip:
+    Next
+End Function
+Function InStrRev2(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = 1) As Long
+    Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
+    If IsInitialized Then Else Initialize
+    
+    If Compare = vbBinaryCompare Then
+        iMap1_SA.pvData = StrPtr(sCheck)
+        iMap2_SA.pvData = StrPtr(sMatch)
+    Else
+        Dim sTmp1$, sTmp2$
+'        sTmp1 = StrConv(sCheck, vbLowerCase)                           'v1
+'        sTmp2 = StrConv(sMatch, vbLowerCase)
+        MovePtr VarPtr(sTmp1), VarPtr(StrConv(sCheck, vbLowerCase)) + 8 'v2
+        MovePtr VarPtr(sTmp2), VarPtr(StrConv(sMatch, vbLowerCase)) + 8
+        iMap1_SA.pvData = StrPtr(sTmp1)
+        iMap2_SA.pvData = StrPtr(sTmp2)
+    End If
+    lenCheck = Len(sCheck)
+    lenMatch = Len(sMatch)
+    iMap1_SA.Bounds.cCount = lenCheck
+    iMap2_SA.Bounds.cCount = lenMatch
+    If lStart = -1 Then lStart = lenCheck
+    
+'    Dim bgnIter& '                                                     'v1
+'    j = lenMatch
+'    iMatch = iMap2(lenMatch)
+'    bgnIter = lenMatch - 1
+'    For i = lStart To lStop + lenMatch - 1 Step -1
+'        If iMap1(i) <> iMatch Then
+'        Else
+'            k = i
+'            For j = bgnIter To 1 Step -1
+'                k = k - 1
+'                If iMap1(k) = iMap2(j) Then Else GoTo skip
+'            Next
+'            InStrRev2 = k: Exit Function
+'        End If
+'skip:
+'    Next
+    iMatch = iMap2(1)                                                   'v2
+    For i = lStart - lenMatch + 1 To lStop Step -1
+        If iMap1(i) <> iMatch Then
+        Else
+            k = i
+            For j = 2 To lenMatch
+                k = k + 1
+                If iMap1(k) = iMap2(j) Then Else GoTo skip
+            Next
+            InStrRev2 = i: Exit Function
+        End If
+skip:
+    Next
+End Function
+Function InStrRev2B(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = 1) As Long
+    Dim i&, j&, k&, lenCheck&, lenMatch&, bMatch As Byte
+    If IsInitialized Then Else Initialize
+    
+    If Compare = vbBinaryCompare Then
+        bMap1_SA.pvData = StrPtr(sCheck)
+        bMap2_SA.pvData = StrPtr(sMatch)
+    Else
+        Dim sTmp1$, sTmp2$
+'        sTmp1 = StrConv(sCheck, vbLowerCase)                           'v1
+'        sTmp2 = StrConv(sMatch, vbLowerCase)
+        MovePtr VarPtr(sTmp1), VarPtr(StrConv(sCheck, vbLowerCase)) + 8 'v2
+        MovePtr VarPtr(sTmp2), VarPtr(StrConv(sMatch, vbLowerCase)) + 8
+        bMap1_SA.pvData = StrPtr(sTmp1)
+        bMap2_SA.pvData = StrPtr(sTmp2)
+    End If
+    lenCheck = LenB(sCheck)
+    lenMatch = LenB(sMatch)
+    bMap1_SA.Bounds.cCount = lenCheck
+    bMap2_SA.Bounds.cCount = lenMatch
+    If lStart = -1 Then lStart = lenCheck
+    
+'    Dim bgnIter&                                                       'v1
+'    j = lenMatch
+'    bMatch = bmap2(lenMatch)
+'    bgnIter = lenMatch - 1
+'    For i = lStart To lStop + lenMatch - 1 Step -1
+'        If bmap1(i) <> bMatch Then
+'        Else
+'            k = i
+'            For j = bgnIter To 1 Step -1
+'                k = k - 1
+'                If bmap1(k) = bmap2(j) Then
+'                Else
+'                    GoTo skip
+'                End If
+'            Next
+'            InStrRev2B = k: Exit Function
+'        End If
+'skip:
+'    Next
+    bMatch = bMap2(1)                                                   'v2
+    For i = lStart - lenMatch + 1 To lStop Step -1
+        If bMap1(i) <> bMatch Then
+        Else
+            k = i
+            For j = 2 To lenMatch
+                k = k + 1
+                If bMap1(k) = bMap2(j) Then Else GoTo skip
+            Next
+            InStrRev2B = i: Exit Function
+        End If
+skip:
+    Next
+End Function
+Sub MemLset(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
+    Dim sDst$, sSrc$, lTmp&
+    Dim s1$, s2$
+    If IsInitialized Then Else Initialize
+    Size = Size - 4
+    
+    lRef_SA.pvData = pSrc
+    lTmp = lRef(0)
+    lRef(0) = Size
+    lRef2_SA.pvData = pDst
+    lRef2(0) = Size
 
+    pSrc = pSrc + 4
+    pDst = pDst + 4
+    sRef_SA.pvData = VarPtr(pSrc)
+    sRef2_SA.pvData = VarPtr(pDst)
+    
+    LSet sRef2(0) = sRef(0)
+    
+    lRef(0) = lTmp
+    lRef2(0) = lTmp
+End Sub
+
+Private Sub Test_MemLset()
+    Dim s1$, s2$
+    s1 = "1111111111"
+    s2 = "2222"
+'    MidB$(s1, 7, 8) = s2
+    MemLset StrPtr(s1) + 6, StrPtr(s2), 8
+    
+End Sub
+Private Sub TestMovePtr()
+    Dim s1$, s2$
+    Dim sAr1$(), sAr2$(), lp As LongPtr
+    
+    Initialize
+    
+    s1 = "asdfadaf"
+    Stop
+    MovePtr VarPtr(s2), VarPtr(s1)
+    Stop
+    ReDim sAr1(2): sAr1(1) = "fasfsad"
+    
+    Stop 'см. Immediate
+    MovePtr VarPtr(lp) + LenB(lp), VarPtr(lp) + LenB(lp) * 2
+    Stop
+End Sub
+Private Sub TestiRef()
+    Dim s$: s = "АБВ"
+    Initialize
+    iRef_SA.pvData = StrPtr(s)
+    iRef_SA.Bounds.cCount = Len(s)
+    iRef(2) = AscW("Ъ")
+    ReDim Preserve iRef(1 To 3)
+End Sub
+Private Sub TestArrayCopy()
+    Dim s1$, s2$
+    s1 = "АБВГД"
+    s2 = "     "
+    Initialize
+    With iRef_SA
+      .pvData = StrPtr(s1)
+      .Bounds.cCount = Len(s1)
+    End With
+    With m_SA
+      .pvData = StrPtr(s2)
+      .cbElements = 2
+      .Bounds.lBound = 1
+      .Bounds.cCount = Len(s2)
+    End With
+    iRef() = iRef
+    
+End Sub
+Private Sub TestArrayAssigment()
+    Dim iAr1%(2), iAr2%(2)
+'    ReDim iAr1(2)
+    iAr2(0) = 123
+    Debug.Print VarPtr(iAr1(0)); iAr1(0)
+    LSet iAr1 = iAr2
+    Debug.Print VarPtr(iAr1(0)); iAr1(0)
+End Sub
+'Тест проверяет устанавливает ли команда LSet нуль-терминал в конце строки. (не устанавливает)
+Private Sub TestLsetString()
+    Dim s1$, s2$
+    Initialize
+    s1 = "sffkjk"
+    s2 = "      "
+    iRef1_SA.pvData = StrPtr(s1)
+    iRef1_SA.Bounds.cCount = Len(s1) + 1
+    iRef2_SA.pvData = StrPtr(s2)
+    iRef2_SA.Bounds.cCount = Len(s1) + 1
+    iRef2(7) = 123
+    LSet s2 = s1
+    Debug.Print iRef2(7)
+End Sub
+Private Sub TestArray()
+    Dim sAr$(2), pSA As LongPtr, SA As SAFEARRAY1D
+    Initialize
+    
+    pSA = VarPtr(pSA) + ptrSz
+'    pSA = RefLngPtr(pSA)
+    CopyPtr pSA, ByVal ArrPtr(sAr)
+    
+    CopyMemory SA, ByVal pSA, LenB(SA)
+End Sub
