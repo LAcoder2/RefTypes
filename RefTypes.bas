@@ -57,7 +57,7 @@ Private Const LPROXY_SIZE      As Long = 1         '// UserDefined (should be an
 Private Const LELEMENT_SIZE    As Long = LPTR_SIZE '// UserDefined (usually should be <PTR_SIZE>)
 Private Const LSIZE_PROXIED    As Long = LELEMENT_SIZE - LPROXY_SIZE
 Private Const LBLOCK_STEP_SIZE As Long = LELEMENT_SIZE * LSIZE_PROXIED
-Private Const Proxy_Count = 25
+Private Const Proxy_Count = 27
 
 Private Enum BOUNDS_HELPER:
   [_BLOCK_ALLOCATION_SIZE] = Proxy_Count * LPTR_SIZE      '// UserDefined (the size of the region being proxied)
@@ -79,7 +79,11 @@ End Type                                '// Although, be aware that this structu
 Private Type MemoryProxy                                           '// The declared type of `Elements()` can be any of
     Elements(LELEMENTS_LBOUND To LELEMENTS_UBOUND) As ProxyElement '// the following: Enum, UDT, or Alias (typedef)
 End Type                                                           '// NOTE: A ProxyElement's Type must be smaller
-
+Private Type B3
+    b1 As Byte
+    b2 As Byte
+    B3 As Byte
+End Type
 '// than the Type of the Element it represents.
 '******************************************************************'
 ' When passed to `InitByProxy()`, the `Initializer.Elements` array '
@@ -113,6 +117,8 @@ Public iMap1()    As Integer:     Private Const iMap1Num = 21 'мапперы с
 Public iMap2()    As Integer:     Private Const iMap2Num = 22
 Public bMap1()    As Byte:        Private Const bMap1Num = 23
 Public bMap2()    As Byte:        Private Const bMap2Num = 24
+Public b3Ref1()   As B3
+Public b3Ref2()   As B3                                    '26
 ' <End of proxied memory block>
 '##################################################################'
 '******************************************************************'
@@ -144,9 +150,10 @@ Public iRef_SA As SAFEARRAY1D, _
        iMap2_SA As SAFEARRAY1D, _
        bMap1_SA As SAFEARRAY1D, _
        bMap2_SA As SAFEARRAY1D
+Public b3Ref1_SA As SAFEARRAY1D, _
+       b3Ref2_SA As SAFEARRAY1D
 '*************************************************************************************************'
 Private IsInitialized As Boolean
-
 
 Sub Initialize()
     If IsInitialized Then Exit Sub
@@ -182,6 +189,8 @@ Sub Initialize()
     iMap2_SA = bRef_SA:   iMap2_SA.cbElements = 2: iMap2_SA.Bounds.lBound = 1
     bMap1_SA = bRef_SA:   bMap1_SA.cbElements = 1: bMap1_SA.Bounds.lBound = 1
     bMap2_SA = bRef_SA:   bMap2_SA.cbElements = 1: bMap2_SA.Bounds.lBound = 1
+    b3Ref1_SA = bRef_SA:  b3Ref1_SA.cbElements = 3
+    b3Ref2_SA = bRef_SA:  b3Ref2_SA.cbElements = 3
     
     InitAllByProxy Initializer.Elements, iRef_SA, Proxy_Count
     
@@ -609,7 +618,13 @@ Sub MemLSet(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
     Dim sDst$, sSrc$, lTmp&
     Dim s1$, s2$
     If IsInitialized Then Else Initialize
-    Size = Size - 4: If Size < 0 Then Exit Sub
+    
+    If Size > 3 Then
+    Else
+        MiniCopy pDst, pSrc, Size
+        Exit Sub
+    End If
+    Size = Size - 4
     
     lRef_SA.pvData = pSrc
     lTmp = lRef(0)
@@ -627,19 +642,38 @@ Sub MemLSet(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
     lRef(0) = lTmp
     lRef2(0) = lTmp
 End Sub
-
+Sub MiniCopy(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
+    On Size GoTo 1, 2, 3
+    If False Then
+1:
+        bRef_SA.pvData = pSrc
+        bRef2_SA.pvData = pDst
+        bRef2(0) = bRef(0)
+    ElseIf fasle Then
+2:
+        iRef_SA.pvData = pSrc
+        iRef2_SA.pvData = pDst
+        iRef2(0) = iRef(0)
+    ElseIf False Then
+3:
+        b3Ref1_SA.pvData = pSrc
+        b3Ref2_SA.pvData = pDst
+        b3Ref2(0) = b3Ref1(0)
+    End If
+End Sub
 Private Sub Test_MemLSet()
     Dim s1$, s2$
     Initialize
     s1 = "1111111111"
     s2 = "2222"
 '    MidB$(s1, 7, 8) = s2
-    MemLSet StrPtr(s1) + 6, StrPtr(s2), 8
-    Debug.Print s1 '1112222111
+'    MemLSet StrPtr(s1) + 6, StrPtr(s2), 8
+'    Debug.Print s1 '1112222111
     
-    Dim b1(2) As Byte, b2(2) As Byte
-    b1(0) = 1: b1(1) = 2: b1(2) = 3
-'    MemLSet VarPtr(b2(0)), VarPtr(b1(0)), 3 '< 3 does not work
+    Dim b1(3) As Byte, b2(3) As Byte
+    b1(0) = 1: b1(1) = 2: b1(2) = 3: b1(3) = 4
+    
+    MemLSet VarPtr(b2(0)), VarPtr(b1(0)), 4
 End Sub
 Private Sub TestMovePtr()
     Dim s1$, s2$
@@ -732,4 +766,9 @@ Private Sub TestArray()
     CopyPtr pSA, ByVal ArrPtr(sAr)
     
     CopyMemory SA, ByVal pSA, LenB(SA)
+End Sub
+Private Sub Test_B3()
+    Dim b3Ar(2) As B3, b3Ar2(2) As B3
+    Debug.Print LenB(b3Ar(0))
+    Debug.Print VarPtr(b3Ar(2)) - VarPtr(b3Ar(1))
 End Sub
