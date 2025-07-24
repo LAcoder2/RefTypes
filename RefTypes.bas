@@ -44,7 +44,7 @@ Option Explicit
 
 #If VBA7 = 0 Then
     Private Enum LONG_PTR: [_]: End Enum
-     Public Enum LongPtr:  [_]: End Enum '// Must be Public for Enum-typed Public Property
+    Public Enum LongPtr:  [_]: End Enum '// Must be Public for Enum-typed Public Property
 #End If
 
 Private Const LPTR_SIZE As Long = 4 + (Win64 * 4)
@@ -642,14 +642,16 @@ Sub MemLSet(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
     lRef(0) = lTmp
     lRef2(0) = lTmp
 End Sub
+'вспомогательная процедура для MemLSet для копирования размера меньше 4 байт.
 Sub MiniCopy(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
     On Size GoTo 1, 2, 3
+    Exit Sub
     If False Then
 1:
         bRef_SA.pvData = pSrc
         bRef2_SA.pvData = pDst
         bRef2(0) = bRef(0)
-    ElseIf fasle Then
+    ElseIf False Then
 2:
         iRef_SA.pvData = pSrc
         iRef2_SA.pvData = pDst
