@@ -84,6 +84,10 @@ Private Type B3
     b2 As Byte
     B3 As Byte
 End Type
+Public Enum SortOrder
+    Descending = -1
+    Ascending = 1
+End Enum
 '// than the Type of the Element it represents.
 '******************************************************************'
 ' When passed to `InitByProxy()`, the `Initializer.Elements` array '
@@ -437,7 +441,8 @@ Private Function StrCompVBA(str1$, str2$) As Long
     StrCompVBA = dif
 End Function
 'аналог instr$() с дополнителным параметром lStop, чтобы указывать позицию окончания поиска.
-Function InStr2(sCheck$, sMatch$, Optional ByVal lStart As Long = 1, Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = -1) As Long
+Function InStr2(sCheck$, sMatch$, Optional ByVal lStart As Long = 1, _
+    Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = -1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
     If IsInitialized Then Else Initialize
     
@@ -506,7 +511,8 @@ Function InStr2B(sCheck$, sMatch$, Optional ByVal lStart As Long = 1, _
 skip:
     Next
 End Function
-Function InStrRev2(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = 1) As Long
+Function InStrRev2(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, _
+    Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = 1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
     If IsInitialized Then Else Initialize
     
@@ -558,7 +564,8 @@ Function InStrRev2(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, Optiona
 skip:
     Next
 End Function
-Function InStrRev2B(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = 1) As Long
+Function InStrRev2B(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, _
+    Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = 1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, bMatch As Byte
     If IsInitialized Then Else Initialize
     
@@ -662,6 +669,44 @@ Sub MiniCopy(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
         b3Ref2_SA.pvData = pDst
         b3Ref2(0) = b3Ref1(0)
     End If
+End Sub
+Private Sub Test_ShellSortS()
+    Dim sAr$()
+    
+    sAr = Split("яблоки Груши аппельсины Кориандр манго")
+    
+    ShellSortS sAr, Descending, vbTextCompare
+End Sub
+'http://www.excelworld.ru/board/vba/tricks/sort_array_shell/9-1-0-32
+Sub ShellSortS(Arr() As String, Optional Order As SortOrder = Ascending, Optional Comp As VbCompareMethod)
+    Dim Limit&, Switch&, i&, j&, ij&, Ub&
+    If IsInitialized Then Else Initialize
+    
+    Ub = UBound(Arr)
+    j = (Ub + 1) \ 2
+    Do While j > 0
+        Limit = Ub - j
+        Do
+            Switch = -1
+            For i = 0 To Limit
+                ij = i + j
+                If StrComp(Arr(i), Arr(ij), Comp) = Order Then
+                    SwapPtr VarPtr(Arr(i)), VarPtr(Arr(ij))
+                    Switch = i
+                End If
+            Next
+            Limit = Switch - j
+        Loop While Switch >= 0
+        j = j \ 2
+    Loop
+End Sub
+Sub SwapPtr(ByVal p1 As LongPtr, ByVal p2 As LongPtr)
+    Dim pTmp As LongPtr
+    lpRef_SA.pvData = p1
+    lpRef2_SA.pvData = p2
+    pTmp = lpRef(0)
+    lpRef(0) = lpRef2(0)
+    lpRef2(0) = pTmp
 End Sub
 Private Sub Test_MemLSet()
     Dim s1$, s2$
