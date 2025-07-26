@@ -57,7 +57,7 @@ Private Const LPROXY_SIZE      As Long = 1         '// UserDefined (should be an
 Private Const LELEMENT_SIZE    As Long = LPTR_SIZE '// UserDefined (usually should be <PTR_SIZE>)
 Private Const LSIZE_PROXIED    As Long = LELEMENT_SIZE - LPROXY_SIZE
 Private Const LBLOCK_STEP_SIZE As Long = LELEMENT_SIZE * LSIZE_PROXIED
-Private Const Proxy_Count = 27
+Private Const Proxy_Count = 28 '!!!!!!!!!!!!!!!
 
 Private Enum BOUNDS_HELPER:
   [_BLOCK_ALLOCATION_SIZE] = Proxy_Count * LPTR_SIZE      '// UserDefined (the size of the region being proxied)
@@ -123,6 +123,7 @@ Public bMap1()    As Byte:        Private Const bMap1Num = 23
 Public bMap2()    As Byte:        Private Const bMap2Num = 24
 Public b3Ref1()   As B3
 Public b3Ref2()   As B3                                    '26
+Public saRef()    As SAFEARRAY1D                           '27
 ' <End of proxied memory block>
 '##################################################################'
 '******************************************************************'
@@ -155,9 +156,11 @@ Public iRef_SA As SAFEARRAY1D, _
        bMap1_SA As SAFEARRAY1D, _
        bMap2_SA As SAFEARRAY1D
 Public b3Ref1_SA As SAFEARRAY1D, _
-       b3Ref2_SA As SAFEARRAY1D
+       b3Ref2_SA As SAFEARRAY1D, _
+       saRef_SA As SAFEARRAY1D
 '*************************************************************************************************'
 Private IsInitialized As Boolean
+Private iMapDyn_SA As SAFEARRAY1D, bMapDyn_SA As SAFEARRAY1D
 
 Sub Initialize()
     If IsInitialized Then Exit Sub
@@ -181,7 +184,7 @@ Sub Initialize()
     dRef_SA = bRef_SA:    dRef_SA.cbElements = 8
     dtRef_SA = bRef_SA:   dtRef_SA.cbElements = 8
     sRef_SA = bRef_SA:    sRef_SA.cbElements = ptrSz  ':    sRef_SA.fFeatures = 402
-    sRef2_SA = bRef_SA:   sRef2_SA.cbElements = ptrSz ':    sRef2_SA.fFeatures = 402
+    sRef2_SA = bRef_SA:   sRef2_SA.cbElements = ptrSz
     vRef_SA = bRef_SA:    vRef_SA.cbElements = varSz
     vRef2_SA = bRef_SA:   vRef2_SA.cbElements = varSz
     oRef_SA = bRef_SA:    oRef_SA.cbElements = ptrSz
@@ -189,14 +192,18 @@ Sub Initialize()
     llRef_SA = bRef_SA:   llRef_SA.cbElements = LenB(llRef(0))
     lpRef_SA = bRef_SA:   lpRef_SA.cbElements = ptrSz
     lpRef2_SA = bRef_SA:  lpRef2_SA.cbElements = ptrSz
-    iMap1_SA = bRef_SA:   iMap1_SA.cbElements = 2: iMap1_SA.Bounds.lBound = 1
+    iMap1_SA = bRef_SA:   iMap1_SA.cbElements = 2: iMap1_SA.Bounds.lBound = 1 'мапперы строк
     iMap2_SA = bRef_SA:   iMap2_SA.cbElements = 2: iMap2_SA.Bounds.lBound = 1
     bMap1_SA = bRef_SA:   bMap1_SA.cbElements = 1: bMap1_SA.Bounds.lBound = 1
     bMap2_SA = bRef_SA:   bMap2_SA.cbElements = 1: bMap2_SA.Bounds.lBound = 1
-    b3Ref1_SA = bRef_SA:  b3Ref1_SA.cbElements = 3
+    b3Ref1_SA = bRef_SA:  b3Ref1_SA.cbElements = 3                            'ссылка 3-байтного типа
     b3Ref2_SA = bRef_SA:  b3Ref2_SA.cbElements = 3
+    saRef_SA = bRef_SA:   saRef_SA.cbElements = LenB(saRef_SA)                'ссылка на структуру Safearray
     
     InitAllByProxy Initializer.Elements, iRef_SA, Proxy_Count
+    
+    iMapDyn_SA = iRef_SA: iMapDyn_SA.cLocks = 0: iMapDyn_SA.fFeatures = 128
+    bMapDyn_SA = bRef_SA: bMapDyn_SA.cLocks = 0: bMapDyn_SA.fFeatures = 128
     
     IsInitialized = True
 End Sub
@@ -231,6 +238,7 @@ Private Sub InitByProxy(ProxyElements() As LONG_PTR, ByVal num As Long, SA As SA
     ProxyElements(num) = VarPtr(SA)
 End Sub
 
+'>>>>>>>>>>>>>>MEMORY SECTION<<<<<<<<<<<<<<<<
 Property Get RefInt(ByVal Target As LongPtr) As Integer
     If IsInitialized Then Else Initialize
     iRef_SA.pvData = Target
@@ -413,6 +421,18 @@ Property Let RefLngPtr2(ByVal Target As LongPtr, ByVal RefLngPtr2 As LongPtr)
     lpRef2_SA2.pvData = Target
     lpRef2(0) = RefLngPtr2
 End Property
+
+'Property Get RefSA(ByVal Target As LongPtr) As SAFEARRAY1D
+'    If IsInitialized Then Else Initialize
+'    saRef_SA.pvData = Target
+'    RefSA = saRef(0)
+'End Property
+'Property Let RefSA(ByVal Target As LongPtr, RefSA As SAFEARRAY1D)
+'    If IsInitialized Then Else Initialize
+'    saRef_SA.pvData = Target
+'    saRef(0) = RefSA
+'End Property
+
 'перемещение указателя (передача владения)
 Sub MovePtr(ByVal pDst As LongPtr, ByVal pSrc As LongPtr)
     If IsInitialized Then Else Initialize
@@ -421,6 +441,68 @@ Sub MovePtr(ByVal pDst As LongPtr, ByVal pSrc As LongPtr)
     lpRef(0) = lpRef2(0)
     lpRef2(0) = 0
 End Sub
+'обмен указателями
+Sub SwapPtr(ByVal p1 As LongPtr, ByVal p2 As LongPtr)
+    Dim pTmp As LongPtr
+    lpRef_SA.pvData = p1
+    lpRef2_SA.pvData = p2
+    pTmp = lpRef(0)
+    lpRef(0) = lpRef2(0)
+    lpRef2(0) = pTmp
+End Sub
+
+'Аналог CopyMemory
+Sub MemLSet(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
+    Dim sDst$, sSrc$, lTmp&
+    Dim s1$, s2$
+    If IsInitialized Then Else Initialize
+    
+    If Size > 3 Then
+    Else
+        MiniCopy pDst, pSrc, Size
+        Exit Sub
+    End If
+    Size = Size - 4
+    
+    lRef_SA.pvData = pSrc
+    lTmp = lRef(0)
+    lRef(0) = Size
+    lRef2_SA.pvData = pDst
+    lRef2(0) = Size
+
+    pSrc = pSrc + 4
+    pDst = pDst + 4
+    sRef_SA.pvData = VarPtr(pSrc)
+    sRef2_SA.pvData = VarPtr(pDst)
+    
+    LSet sRef2(0) = sRef(0)
+    
+    lRef(0) = lTmp
+    lRef2(0) = lTmp
+End Sub
+'вспомогательная процедура для MemLSet для копирования размера меньше 4 байт.
+Sub MiniCopy(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
+    On Size GoTo 1, 2, 3
+    Exit Sub
+    If False Then
+1:
+        bRef_SA.pvData = pSrc
+        bRef2_SA.pvData = pDst
+        bRef2(0) = bRef(0)
+    ElseIf False Then
+2:
+        iRef_SA.pvData = pSrc
+        iRef2_SA.pvData = pDst
+        iRef2(0) = iRef(0)
+    ElseIf False Then
+3:
+        b3Ref1_SA.pvData = pSrc
+        b3Ref2_SA.pvData = pDst
+        b3Ref2(0) = b3Ref1(0)
+    End If
+End Sub
+
+'>>>>>>>>>>>>>>>STRINGS SECTION<<<<<<<<<<<<<<<<<<<'
 Private Function StrCompVBA(str1$, str2$) As Long
     Dim len1&, len2&, lenMin&
     Dim i&, dif&
@@ -620,56 +702,96 @@ Function InStrRev2B(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, _
 skip:
     Next
 End Function
-'Аналог CopyMemory
-Sub MemLSet(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
-    Dim sDst$, sSrc$, lTmp&
-    Dim s1$, s2$
-    If IsInitialized Then Else Initialize
+Private Sub TestResizeString()
+    Dim s$: s = "abcd"
     
-    If Size > 3 Then
+    ReallocStringB s, 11
+End Sub
+Sub ReallocString(sSrc$, ByVal newSize&)
+    Dim iMap%(), pSrc As LongPtr
+    If newSize < 0 Then Exit Sub
+    If IsInitialized Then Else Initialize
+        
+    pSrc = StrPtr(sSrc)
+    If pSrc Then
+        iMapDyn_SA.pvData = StrPtr(sSrc) - 4
+        iMapDyn_SA.Bounds.cCount = Len(sSrc) + 3
     Else
-        MiniCopy pDst, pSrc, Size
+        sSrc = String$(newSize, vbNullChar)
         Exit Sub
     End If
-    Size = Size - 4
+        
+    lpRef_SA.pvData = VarPtr(pSrc) + ptrSz
+    lpRef(0) = VarPtr(iMapDyn_SA)
     
-    lRef_SA.pvData = pSrc
-    lTmp = lRef(0)
-    lRef(0) = Size
-    lRef2_SA.pvData = pDst
-    lRef2(0) = Size
-
-    pSrc = pSrc + 4
-    pDst = pDst + 4
-    sRef_SA.pvData = VarPtr(pSrc)
-    sRef2_SA.pvData = VarPtr(pDst)
+    ReDim Preserve iMap(newSize + 2)
+    lpRef(0) = 0
     
-    LSet sRef2(0) = sRef(0)
+    lpRef2_SA.pvData = VarPtr(sSrc)
+    lpRef2(0) = iMapDyn_SA.pvData + 4
     
-    lRef(0) = lTmp
-    lRef2(0) = lTmp
+    lRef_SA.pvData = iMapDyn_SA.pvData
+    lRef(0) = newSize * 2
 End Sub
-'вспомогательная процедура для MemLSet для копирования размера меньше 4 байт.
-Sub MiniCopy(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
-    On Size GoTo 1, 2, 3
-    Exit Sub
-    If False Then
-1:
-        bRef_SA.pvData = pSrc
-        bRef2_SA.pvData = pDst
-        bRef2(0) = bRef(0)
-    ElseIf False Then
-2:
-        iRef_SA.pvData = pSrc
-        iRef2_SA.pvData = pDst
-        iRef2(0) = iRef(0)
-    ElseIf False Then
-3:
-        b3Ref1_SA.pvData = pSrc
-        b3Ref2_SA.pvData = pDst
-        b3Ref2(0) = b3Ref1(0)
+Sub ReallocStringB(sSrc$, ByVal newSize&)
+    Dim bMap() As Byte, pSrc As LongPtr
+    If newSize < 0 Then Exit Sub
+    If IsInitialized Then Else Initialize
+        
+    pSrc = StrPtr(sSrc)
+    If pSrc Then
+    Else
+        ReDim bMap(newSize - 1) As Byte
+        sSrc = bMap
+        Exit Sub
     End If
+    bMapDyn_SA.pvData = StrPtr(sSrc) - 4
+    bMapDyn_SA.Bounds.cCount = LenB(sSrc) + 6
+        
+    lpRef_SA.pvData = VarPtr(pSrc) + ptrSz
+    lpRef(0) = VarPtr(bMapDyn_SA)
+    
+    ReDim Preserve bMap(newSize + 5)
+    lpRef(0) = 0
+    
+    lpRef2_SA.pvData = VarPtr(sSrc)
+    lpRef2(0) = bMapDyn_SA.pvData + 4
+    
+    lRef_SA.pvData = bMapDyn_SA.pvData
+    lRef(0) = newSize
 End Sub
+Private Sub Test_VbaRealloc()
+    Dim s$, p As LongPtr
+    Initialize
+    
+    p = VbaRealloc(0, 6)
+    
+    lpRef_SA.pvData = VarPtr(s)
+    lpRef(0) = p + 4
+End Sub
+Function VbaRealloc(ByVal pBgn As LongPtr, ByVal newSize As Long) As LongPtr
+    Dim bMap() As Byte, lp As LongPtr
+    If newSize < 1 Then Exit Function
+    If IsInitialized Then Else Initialize
+    
+    If pBgn Then
+    Else
+        ReDim bMap(newSize - 1)
+        lpRef_SA.pvData = VarPtr(lp) + ptrSz
+        saRef_SA.pvData = lpRef(0)
+        VbaRealloc = saRef(0).pvData ' = VarPtr(bMap(0))
+        saRef(0).pvData = 0
+        Exit Function
+    End If
+    
+    bMapDyn_SA.pvData = pBgn
+    bMapDyn_SA.Bounds.cCount = newSize
+    lpRef_SA.pvData = VarPtr(lp) + ptrSz
+    lpRef(0) = VarPtr(bMapDyn_SA)
+    ReDim Preserve bMap(newSize - 1)
+    lpRef(0) = 0
+    VbaRealloc = bMapDyn_SA.pvData
+End Function
 Private Sub Test_ShellSortS()
     Dim sAr$()
     
@@ -700,14 +822,9 @@ Sub ShellSortS(Arr() As String, Optional Order As SortOrder = Ascending, Optiona
         j = j \ 2
     Loop
 End Sub
-Sub SwapPtr(ByVal p1 As LongPtr, ByVal p2 As LongPtr)
-    Dim pTmp As LongPtr
-    lpRef_SA.pvData = p1
-    lpRef2_SA.pvData = p2
-    pTmp = lpRef(0)
-    lpRef(0) = lpRef2(0)
-    lpRef2(0) = pTmp
-End Sub
+
+
+'>>>>>>>>>>>TESTS<<<<<<<<<<<<<
 Private Sub Test_MemLSet()
     Dim s1$, s2$
     Initialize
