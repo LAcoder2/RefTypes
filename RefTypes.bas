@@ -292,7 +292,7 @@ Property Get GetObj(ByVal Target As LongPtr) As Object
     oRef_SA.pvData = Target
     Set RefObj = oRef(0)
 End Property
-Property Set RefObj(ByVal Target As LongPtr, ByVal RefObj As Object)
+Property Set SetObj(ByVal Target As LongPtr, ByVal RefObj As Object)
     If IsInitialized Then Else Initialize
     oRef_SA.pvData = Target
     Set oRef(0) = RefObj
@@ -319,7 +319,7 @@ Property Let PutVar(ByVal Target As LongPtr, ByRef RefVar As Variant)
     vRef_SA.pvData = Target
     vRef(0) = RefVar
 End Property
-Property Set RefVar(ByVal Target As LongPtr, ByRef RefVar As Variant)
+Property Set SetVar(ByVal Target As LongPtr, ByRef RefVar As Variant)
     If IsInitialized Then Else Initialize
     vRef_SA.pvData = Target
     Set vRef(0) = RefVar
@@ -330,7 +330,7 @@ Property Get GetUnk(ByVal Target As LongPtr) As IUnknown
     unkRef_SA.pvData = Target
     Set RefUnk = unkRef(0)
 End Property
-Property Set RefUnk(ByVal Target As LongPtr, ByVal RefUnk As IUnknown)
+Property Set SetUnk(ByVal Target As LongPtr, ByVal RefUnk As IUnknown)
     If IsInitialized Then Else Initialize
     unkRef_SA.pvData = Target
     Set unkRef(0) = RefUnk
