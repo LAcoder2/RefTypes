@@ -57,7 +57,7 @@ Private Const LPROXY_SIZE      As Long = 1         '// UserDefined (should be an
 Private Const LELEMENT_SIZE    As Long = LPTR_SIZE '// UserDefined (usually should be <PTR_SIZE>)
 Private Const LSIZE_PROXIED    As Long = LELEMENT_SIZE - LPROXY_SIZE
 Private Const LBLOCK_STEP_SIZE As Long = LELEMENT_SIZE * LSIZE_PROXIED
-Private Const Proxy_Count = 28 '!!!!!!!!!!!!!!!
+Private Const Proxy_Count = 1 '28 '!!!!!!!!!!!!!!!
 
 Private Enum BOUNDS_HELPER:
   [_BLOCK_ALLOCATION_SIZE] = Proxy_Count * LPTR_SIZE      '// UserDefined (the size of the region being proxied)
@@ -96,111 +96,82 @@ End Enum
 '##################################################################'
 Public Initializer   As MemoryProxy
 ' <Memory proxied by `Initializer`>
-Public iRef()     As Integer:     Private Const iRefNum = 0
-Public iRef2()    As Integer:     Private Const iRef2Num = 1
-Public lRef()     As Long:        Private Const lRefNum = 2
-Public lRef2()    As Long:        Private Const lRef2Num = 3
-Public snRef()    As Single:      Private Const snRefNum = 4
-Public dRef()     As Double:      Private Const dRefNum = 5
-Public cRef()     As Currency:    Private Const cRefNum = 6
-Public cRef2()    As Currency:    Private Const cRef2Num = 7
-Public dtRef()    As Date:        Private Const dtRefNum = 8
-Public sRef()     As String:      Private Const sRefNum = 9
-Public sRef2()    As String:      Private Const sRef2Num = 10
-Public oRef()     As Object:      Private Const oRefNum = 11
-Public blRef()    As Boolean:     Private Const blRefNum = 12
-Public vRef()     As Variant:     Private Const vRefNum = 13
-Public vRef2()    As Variant:     Private Const vRef2Num = 14
-Public unkRef()   As IUnknown:    Private Const unkRefNum = 15
-Public bRef()     As Byte:        Private Const bRefNum = 16
-Public bRef2()    As Byte:        Private Const bRef2Num = 17
-Public llRef()    As LongLong:    Private Const llRefNum = 18
-Public lpRef()    As LongPtr:     Private Const lpRefNum = 19
-Public lpRef2()   As LongPtr:     Private Const lpRef2Num = 20
-Public iMap1()    As Integer:     Private Const iMap1Num = 21 'мапперы строк (с индексацией от 1)
-Public iMap2()    As Integer:     Private Const iMap2Num = 22
-Public bMap1()    As Byte:        Private Const bMap1Num = 23
-Public bMap2()    As Byte:        Private Const bMap2Num = 24
-Public b3Ref1()   As B3
-Public b3Ref2()   As B3                                    '26
-Public saRef()    As SAFEARRAY1D                           '27
+Public lpRef() As LongPtr, lpRef_SA As SAFEARRAY1D
+Public lpRef2() As LongPtr, lpRef2_SA As SAFEARRAY1D
+Public iRef() As Integer, iRef_SA As SAFEARRAY1D
+Public iRef2() As Integer, iRef2_SA As SAFEARRAY1D
+Public lRef() As Long, lRef_SA As SAFEARRAY1D
+Public lRef2() As Long, lRef2_SA As SAFEARRAY1D
+Public snRef() As Single, snRef_SA As SAFEARRAY1D
+Public dRef() As Double, dRef_SA As SAFEARRAY1D
+Public cRef() As Currency, cRef_SA As SAFEARRAY1D
+Public cRef2() As Currency, cRef2_SA As SAFEARRAY1D
+Public dtRef() As Date, dtRef_SA As SAFEARRAY1D
+Public sRef() As String, sRef_SA As SAFEARRAY1D
+Public sRef2() As String, sRef2_SA As SAFEARRAY1D
+Public oRef() As Object, oRef_SA As SAFEARRAY1D
+Public blRef() As Boolean, blRef_SA As SAFEARRAY1D
+Public vRef() As Variant, vRef_SA As SAFEARRAY1D
+Public vRef2() As Variant, vRef2_SA As SAFEARRAY1D
+Public unkRef() As IUnknown, unkRef_SA As SAFEARRAY1D
+Public bRef() As Byte, bRef_SA As SAFEARRAY1D
+Public bRef2() As Byte, bRef2_SA As SAFEARRAY1D
+Public llRef() As LongLong, llRef_SA As SAFEARRAY1D
+Public iMap1() As Integer, iMap1_SA As SAFEARRAY1D      'мапперы строк (с индексацией от 1)
+Public iMap2() As Integer, iMap2_SA As SAFEARRAY1D
+Public bMap1() As Byte, bMap1_SA As SAFEARRAY1D
+Public bMap2() As Byte, bMap2_SA As SAFEARRAY1D
+Public b3Ref1() As B3, b3Ref1_SA As SAFEARRAY1D
+Public b3Ref2() As B3, b3Ref2_SA As SAFEARRAY1D         '26
+Public saRef() As SAFEARRAY1D, saRef_SA As SAFEARRAY1D  '27
 ' <End of proxied memory block>
 '##################################################################'
 '******************************************************************'
 '*************************************************************************************************'
 ' Inspired by Cristian Buse's `VBA-MemoryTools` <https://github.com/cristianbuse/VBA-MemoryTools> '
 ' Arbitrary memory access is achieved via a carefully constructed SAFEARRAY `Descriptor` struct.  '
-Public iRef_SA As SAFEARRAY1D, _
-       iRef2_SA As SAFEARRAY1D, _
-       lRef_SA As SAFEARRAY1D, _
-       lRef2_SA As SAFEARRAY1D, _
-       snRef_SA As SAFEARRAY1D, _
-       dRef_SA As SAFEARRAY1D, _
-       cRef_SA As SAFEARRAY1D, _
-       cRef2_SA As SAFEARRAY1D, _
-       dtRef_SA As SAFEARRAY1D, _
-       sRef_SA As SAFEARRAY1D, _
-       sRef2_SA As SAFEARRAY1D, _
-       oRef_SA As SAFEARRAY1D, _
-       blRef_SA As SAFEARRAY1D, _
-       vRef_SA As SAFEARRAY1D, _
-       vRef2_SA As SAFEARRAY1D, _
-       unkRef_SA As SAFEARRAY1D, _
-       bRef_SA As SAFEARRAY1D, _
-       bRef2_SA As SAFEARRAY1D, _
-       llRef_SA As SAFEARRAY1D, _
-       lpRef_SA As SAFEARRAY1D, _
-       lpRef2_SA As SAFEARRAY1D, _
-       iMap1_SA As SAFEARRAY1D, _
-       iMap2_SA As SAFEARRAY1D, _
-       bMap1_SA As SAFEARRAY1D, _
-       bMap2_SA As SAFEARRAY1D
-Public b3Ref1_SA As SAFEARRAY1D, _
-       b3Ref2_SA As SAFEARRAY1D, _
-       saRef_SA As SAFEARRAY1D
 '*************************************************************************************************'
-Private IsInitialized As Boolean
+Private IsInitialized As Boolean, isInitlpRef As Boolean
 Private iMapDyn_SA As SAFEARRAY1D, bMapDyn_SA As SAFEARRAY1D
 
 Sub Initialize()
     If IsInitialized Then Exit Sub
     
-    With bRef_SA
+    With lpRef_SA
       .cDims = 1
       .fFeatures = FADF_FIXEDSIZE_AUTO
       .cLocks = 1
-      .cbElements = 1
+      .cbElements = ptrSz
       .Bounds.cCount = 1
     End With
-    bRef2_SA = bRef_SA
-    iRef_SA = bRef_SA:    iRef_SA.cbElements = 2 '(LenB(iRef(0))
-    iRef2_SA = bRef_SA:   iRef2_SA.cbElements = 2
-    blRef_SA = bRef_SA:   blRef_SA.cbElements = 2
-    lRef_SA = bRef_SA:    lRef_SA.cbElements = 4
-    lRef2_SA = bRef_SA:   lRef2_SA.cbElements = 4
-    cRef_SA = bRef_SA:    cRef_SA.cbElements = 8
-    cRef2_SA = bRef_SA:   cRef2_SA.cbElements = 8
-    snRef_SA = bRef_SA:   snRef_SA.cbElements = 4
-    dRef_SA = bRef_SA:    dRef_SA.cbElements = 8
-    dtRef_SA = bRef_SA:   dtRef_SA.cbElements = 8
-    sRef_SA = bRef_SA:    sRef_SA.cbElements = ptrSz  ':    sRef_SA.fFeatures = 402
-    sRef2_SA = bRef_SA:   sRef2_SA.cbElements = ptrSz
-    vRef_SA = bRef_SA:    vRef_SA.cbElements = varSz
-    vRef2_SA = bRef_SA:   vRef2_SA.cbElements = varSz
-    oRef_SA = bRef_SA:    oRef_SA.cbElements = ptrSz
-    unkRef_SA = bRef_SA:  unkRef_SA.cbElements = ptrSz
-    llRef_SA = bRef_SA:   llRef_SA.cbElements = LenB(llRef(0))
-    lpRef_SA = bRef_SA:   lpRef_SA.cbElements = ptrSz
-    lpRef2_SA = bRef_SA:  lpRef2_SA.cbElements = ptrSz
-    iMap1_SA = bRef_SA:   iMap1_SA.cbElements = 2: iMap1_SA.Bounds.lBound = 1 'мапперы строк
-    iMap2_SA = bRef_SA:   iMap2_SA.cbElements = 2: iMap2_SA.Bounds.lBound = 1
-    bMap1_SA = bRef_SA:   bMap1_SA.cbElements = 1: bMap1_SA.Bounds.lBound = 1
-    bMap2_SA = bRef_SA:   bMap2_SA.cbElements = 1: bMap2_SA.Bounds.lBound = 1
-    b3Ref1_SA = bRef_SA:  b3Ref1_SA.cbElements = 3                            'ссылка 3-байтного типа
-    b3Ref2_SA = bRef_SA:  b3Ref2_SA.cbElements = 3
-    saRef_SA = bRef_SA:   saRef_SA.cbElements = LenB(saRef_SA)                'ссылка на структуру Safearray
+    InitByProxy Initializer.Elements, lpRef_SA, 1 'Proxy_Count инициализация первой ссылки (lpRef())
+    isInitlpRef = True
     
-    InitAllByProxy Initializer.Elements, iRef_SA, Proxy_Count
+    MakeRef lpRef2_SA, VarPtr(lpRef2_SA) - ptrSz, ptrSz
+    MakeRef iRef_SA, VarPtr(iRef_SA) - ptrSz, 2
+    MakeRef iRef2_SA, VarPtr(iRef2_SA) - ptrSz, 2
+    MakeRef blRef_SA, VarPtr(blRef_SA) - ptrSz, 2
+    MakeRef lRef_SA, VarPtr(lRef_SA) - ptrSz, 4
+    MakeRef lRef2_SA, VarPtr(lRef2_SA) - ptrSz, 4
+    MakeRef cRef_SA, VarPtr(cRef_SA) - ptrSz, 8
+    MakeRef cRef2_SA, VarPtr(cRef2_SA) - ptrSz, 8
+    MakeRef snRef_SA, VarPtr(snRef_SA) - ptrSz, 4
+    MakeRef dRef_SA, VarPtr(dRef_SA) - ptrSz, 8
+    MakeRef dtRef_SA, VarPtr(dtRef_SA) - ptrSz, 8
+    MakeRef sRef_SA, VarPtr(sRef_SA) - ptrSz, ptrSz
+    MakeRef sRef2_SA, VarPtr(sRef2_SA) - ptrSz, ptrSz
+    MakeRef vRef_SA, VarPtr(vRef_SA) - ptrSz, varSz
+    MakeRef vRef2_SA, VarPtr(vRef2_SA) - ptrSz, varSz
+    MakeRef oRef_SA, VarPtr(oRef_SA) - ptrSz, ptrSz
+    MakeRef unkRef_SA, VarPtr(unkRef_SA) - ptrSz, ptrSz
+    MakeRef llRef_SA, VarPtr(llRef_SA) - ptrSz, 8
+    MakeRef iMap1_SA, VarPtr(iMap1_SA) - ptrSz, 2: iMap1_SA.Bounds.lBound = 1 'мапперы строк
+    MakeRef iMap2_SA, VarPtr(iMap2_SA) - ptrSz, 2: iMap2_SA.Bounds.lBound = 1
+    MakeRef bMap1_SA, VarPtr(bMap1_SA) - ptrSz, 1: bMap1_SA.Bounds.lBound = 1
+    MakeRef bMap2_SA, VarPtr(bMap2_SA) - ptrSz, 1: bMap2_SA.Bounds.lBound = 1
+    MakeRef b3Ref1_SA, VarPtr(b3Ref1_SA) - ptrSz, 3                           'ссылка 3-байтного типа
+    MakeRef b3Ref2_SA, VarPtr(b3Ref2_SA) - ptrSz, 3
+    MakeRef saRef_SA, VarPtr(saRef_SA) - ptrSz, LenB(saRef_SA) 'ссылка на структуру SafeArray
     
     iMapDyn_SA = iRef_SA: iMapDyn_SA.cLocks = 0: iMapDyn_SA.fFeatures = 128
     bMapDyn_SA = bRef_SA: bMapDyn_SA.cLocks = 0: bMapDyn_SA.fFeatures = 128
@@ -225,7 +196,7 @@ End Sub
 ' However, since Fixed-Length-Strings have no alignment, the starting position of '
 ' an element and the starting position of its proxy will always be the same.      '
 '*********************************************************************************'
-Private Sub InitAllByProxy(ProxyElements() As LONG_PTR, SA1 As SAFEARRAY1D, ByVal proxyCount&)
+Private Sub InitByProxy(ProxyElements() As LONG_PTR, SA1 As SAFEARRAY1D, ByVal proxyCount&)
     Dim i&, pSA1 As LongPtr, szSA As Long
     
     pSA1 = VarPtr(SA1)
@@ -234,89 +205,89 @@ Private Sub InitAllByProxy(ProxyElements() As LONG_PTR, SA1 As SAFEARRAY1D, ByVa
         ProxyElements(i) = pSA1 + i * szSA
     Next
 End Sub
-Private Sub InitByProxy(ProxyElements() As LONG_PTR, ByVal num As Long, SA As SAFEARRAY1D)
-    ProxyElements(num) = VarPtr(SA)
-End Sub
+'Private Sub InitByProxy(ProxyElements() As LONG_PTR, ByVal num As Long, SA As SAFEARRAY1D)
+'    ProxyElements(num) = VarPtr(SA)
+'End Sub
 
 '>>>>>>>>>>>>>>MEMORY SECTION<<<<<<<<<<<<<<<<
-Property Get RefInt(ByVal Target As LongPtr) As Integer
+Property Get GetInt(ByVal Target As LongPtr) As Integer
     If IsInitialized Then Else Initialize
     iRef_SA.pvData = Target
     RefInt = iRef(0)
 End Property
-Property Let RefInt(ByVal Target As LongPtr, ByVal RefInt As Integer)
+Property Let PutInt(ByVal Target As LongPtr, ByVal RefInt As Integer)
     If IsInitialized Then Else Initialize
     iRef_SA.pvData = Target
     iRef(0) = RefInt
 End Property
 
-Property Get RefLng(ByVal Target As LongPtr) As Long
+Property Get GetLng(ByVal Target As LongPtr) As Long
     If IsInitialized Then Else Initialize
     lRef_SA.pvData = Target
     RefLng = lRef(0)
 End Property
-Property Let RefLng(ByVal Target As LongPtr, ByVal RefLng As Long)
+Property Let PutLng(ByVal Target As LongPtr, ByVal RefLng As Long)
     If IsInitialized Then Else Initialize
     lRef_SA.pvData = Target
     lRef(0) = RefLng
 End Property
 
-Property Get RefSng(ByVal Target As LongPtr) As Single
+Property Get GetSng(ByVal Target As LongPtr) As Single
     If IsInitialized Then Else Initialize
     snRef_SA.pvData = Target
     RefSng = snRef(0)
 End Property
-Property Let RefSng(ByVal Target As LongPtr, ByVal RefSng As Single)
+Property Let PutSng(ByVal Target As LongPtr, ByVal RefSng As Single)
     If IsInitialized Then Else Initialize
     snRef_SA.pvData = Target
     snRef(0) = RefSng
 End Property
 
-Property Get RefDbl(ByVal Target As LongPtr) As Double
+Property Get GetDbl(ByVal Target As LongPtr) As Double
     If IsInitialized Then Else Initialize
     dRef_SA.pvData = Target
     RefDbl = dRef(0)
 End Property
-Property Let RefDbl(ByVal Target As LongPtr, ByVal RefDbl As Double)
+Property Let PutDbl(ByVal Target As LongPtr, ByVal RefDbl As Double)
     If IsInitialized Then Else Initialize
     dRef_SA.pvData = Target
     dRef(0) = RefDbl
 End Property
 
-Property Get RefCur(ByVal Target As LongPtr) As Currency
+Property Get GetCur(ByVal Target As LongPtr) As Currency
     If IsInitialized Then Else Initialize
     cRef_SA.pvData = Target
     RefCur = cRef(0)
 End Property
-Property Let RefCur(ByVal Target As LongPtr, ByVal RefCur As Currency)
+Property Let PutCur(ByVal Target As LongPtr, ByVal RefCur As Currency)
     If IsInitialized Then Else Initialize
     cRef_SA.pvData = Target
     cRef(0) = RefCur
 End Property
 
-Property Get RefDate(ByVal Target As LongPtr) As Date
+Property Get GetDate(ByVal Target As LongPtr) As Date
     If IsInitialized Then Else Initialize
     dtRef_SA.pvData = Target
     RefDate = dtRef(0)
 End Property
-Property Let RefDate(ByVal Target As LongPtr, ByVal RefDate As Date)
+Property Let PutDate(ByVal Target As LongPtr, ByVal RefDate As Date)
     If IsInitialized Then Else Initialize
     dtRef_SA.pvData = Target
     dtRef(0) = RefDate
 End Property
 
-Property Get RefStr(ByVal Target As LongPtr) As String
+Property Get GetStr(ByVal Target As LongPtr) As String
     If IsInitialized Then Else Initialize
     sRef_SA.pvData = Target
     RefStr = sRef(0)
 End Property
-Property Let RefStr(ByVal Target As LongPtr, ByRef RefStr As String)
+Property Let PutStr(ByVal Target As LongPtr, ByRef RefStr As String)
     If IsInitialized Then Else Initialize
     sRef_SA.pvData = Target
     sRef(0) = RefStr
 End Property
 
-Property Get RefObj(ByVal Target As LongPtr) As Object
+Property Get GetObj(ByVal Target As LongPtr) As Object
     If IsInitialized Then Else Initialize
     oRef_SA.pvData = Target
     Set RefObj = oRef(0)
@@ -327,23 +298,23 @@ Property Set RefObj(ByVal Target As LongPtr, ByVal RefObj As Object)
     Set oRef(0) = RefObj
 End Property
 
-Property Get RefBool(ByVal Target As LongPtr) As Boolean
+Property Get GetBool(ByVal Target As LongPtr) As Boolean
     If IsInitialized Then Else Initialize
     blRef_SA.pvData = Target
     RefBool = blRef(0)
 End Property
-Property Let RefBool(ByVal Target As LongPtr, ByVal RefBool As Boolean)
+Property Let PutBool(ByVal Target As LongPtr, ByVal RefBool As Boolean)
     If IsInitialized Then Else Initialize
     blRef_SA.pvData = Target
     blRef(0) = RefBool
 End Property
 
-Property Get RefVar(ByVal Target As LongPtr) As Variant
+Property Get GetVar(ByVal Target As LongPtr) As Variant
     If IsInitialized Then Else Initialize
     vRef_SA.pvData = Target
     RefVar = vRef(0)
 End Property
-Property Let RefVar(ByVal Target As LongPtr, ByRef RefVar As Variant)
+Property Let PutVar(ByVal Target As LongPtr, ByRef RefVar As Variant)
     If IsInitialized Then Else Initialize
     vRef_SA.pvData = Target
     vRef(0) = RefVar
@@ -354,7 +325,7 @@ Property Set RefVar(ByVal Target As LongPtr, ByRef RefVar As Variant)
     Set vRef(0) = RefVar
 End Property
 
-Property Get RefUnk(ByVal Target As LongPtr) As IUnknown
+Property Get GetUnk(ByVal Target As LongPtr) As IUnknown
     If IsInitialized Then Else Initialize
     unkRef_SA.pvData = Target
     Set RefUnk = unkRef(0)
@@ -365,69 +336,94 @@ Property Set RefUnk(ByVal Target As LongPtr, ByVal RefUnk As IUnknown)
     Set unkRef(0) = RefUnk
 End Property
 
-'Property Get RefDec(ByVal Target As LongPtr) As Variant
+'Property Get GetDec(ByVal Target As LongPtr) As Variant
 '    If IsInitialized Then Else Initialize
 '    dcRef_SA.pvData = Target
 '    RefDec = dcRef(0)
 'End Property
-'Property Let RefDec(ByVal Target As LongPtr, ByVal RefDec As Variant)
+'Property Let PutDec(ByVal Target As LongPtr, ByVal RefDec As Variant)
 '    If IsInitialized Then Else Initialize
 '    dcRef_SA.pvData = Target
 '    dcRef(0) = RefDec
 'End Property '_
-Property Get RefByte(ByVal Target As LongPtr) As Byte
+Property Get GetByte(ByVal Target As LongPtr) As Byte
     If IsInitialized Then Else Initialize
     bRef_SA.pvData = Target
     RefByte = bRef(0)
 End Property
-Property Let RefByte(ByVal Target As LongPtr, ByVal RefByte As Byte)
+Property Let PutByte(ByVal Target As LongPtr, ByVal RefByte As Byte)
     If IsInitialized Then Else Initialize
     bRef_SA.pvData = Target
     bRef(0) = RefByte
 End Property
 
-    Property Get RefLngLng(ByVal Target As LongPtr) As LongLong
+    Property Get GetLngLng(ByVal Target As LongPtr) As LongLong
         If IsInitialized Then Else Initialize
         llRef_SA.pvData = Target
         RefLngLng = llRef(0)
     End Property
 #If Win64 = 0 Then
-    Property Let RefLngLng(ByVal Target As LongPtr, ByRef RefLngLng As LongLong)
+    Property Let PutLngLng(ByVal Target As LongPtr, ByRef RefLngLng As LongLong)
 #Else
-    Property Let RefLngLng(ByVal Target As LongPtr, ByVal RefLngLng As LongLong)
+    Property Let PutLngLng(ByVal Target As LongPtr, ByVal RefLngLng As LongLong)
 #End If
         If IsInitialized Then Else Initialize
         llRef_SA.pvData = Target
         llRef(0) = RefLngLng
     End Property
 
-Property Get RefLngPtr(ByVal Target As LongPtr) As LongPtr
+Property Get GetLngPtr(ByVal Target As LongPtr) As LongPtr
     If IsInitialized Then Else Initialize
     lpRef_SA.pvData = Target
     RefLngPtr = lpRef(0)
 End Property
-Property Let RefLngPtr(ByVal Target As LongPtr, ByVal RefLngPtr As LongPtr)
+Property Let PutLngPtr(ByVal Target As LongPtr, ByVal RefLngPtr As LongPtr)
     If IsInitialized Then Else Initialize
     lpRef_SA.pvData = Target
     lpRef(0) = RefLngPtr
 End Property
-Property Get RefLngPtr2(ByVal Target As LongPtr) As LongPtr
+Function RefLngPtr(SA As SAFEARRAY1D, Optional ByVal Target As LongPtr) As LongPtr()
+    Dim lpArTmp() As LongPtr, pTmp As LongPtr
     If IsInitialized Then Else Initialize
-    lpRef2_SA.pvData = Target
-    RefLngPtr = lpRef2(0)
-End Property
-Property Let RefLngPtr2(ByVal Target As LongPtr, ByVal RefLngPtr2 As LongPtr)
-    If IsInitialized Then Else Initialize
-    lpRef2_SA2.pvData = Target
-    lpRef2(0) = RefLngPtr2
-End Property
-
-'Property Get RefSA(ByVal Target As LongPtr) As SAFEARRAY1D
+    
+    pTmp = lpRef_SA.pvData
+    
+    SA = lpRef_SA
+    SA.pvData = Target
+    lpRef_SA.pvData = VarPtr(pTmp) + ptrSz
+    lpRef(0) = VarPtr(SA)
+    
+    lpRef_SA.pvData = pTmp
+    
+    RefLngPtr = lpArTmp
+End Function
+Private Sub Example_Ref_Making()
+    Dim lp As LongPtr, refDesc As SAFEARRAY1D, ref() As LongPtr
+    lp = VarPtr(lp)
+    ref = RefLngPtr(refDesc, VarPtr(lp))
+'    MakeRef refDesc, VarPtr(refDesc) - ptrSz, ptrSz
+'    refDesc.pvData = lp
+End Sub
+Sub MakeRef(SA As SAFEARRAY1D, ByVal pArrOut As LongPtr, ByVal ElemSize As LongPtr)
+    Dim pTmp As LongPtr
+    If pArrOut > 0 Then Else Exit Sub
+    If isInitlpRef Then Else Initialize
+    
+    pTmp = lpRef_SA.pvData
+    
+    SA = lpRef_SA
+    SA.cbElements = ElemSize
+    lpRef_SA.pvData = pArrOut
+    lpRef(0) = VarPtr(SA)
+    
+    lpRef_SA.pvData = pTmp
+End Sub
+'Property Get GetSA(ByVal Target As LongPtr) As SAFEARRAY1D
 '    If IsInitialized Then Else Initialize
 '    saRef_SA.pvData = Target
 '    RefSA = saRef(0)
 'End Property
-'Property Let RefSA(ByVal Target As LongPtr, RefSA As SAFEARRAY1D)
+'Property Let PutSA(ByVal Target As LongPtr, RefSA As SAFEARRAY1D)
 '    If IsInitialized Then Else Initialize
 '    saRef_SA.pvData = Target
 '    saRef(0) = RefSA
@@ -800,7 +796,8 @@ Private Sub Test_ShellSortS()
     ShellSortS sAr, Descending, vbTextCompare
 End Sub
 'http://www.excelworld.ru/board/vba/tricks/sort_array_shell/9-1-0-32
-Sub ShellSortS(Arr() As String, Optional Order As SortOrder = Ascending, Optional Comp As VbCompareMethod)
+Sub ShellSortS(Arr() As String, _
+    Optional ByVal Order As SortOrder = Ascending, Optional ByVal Comp As VbCompareMethod)
     Dim Limit&, Switch&, i&, j&, ij&, Ub&
     If IsInitialized Then Else Initialize
     
@@ -935,4 +932,23 @@ Private Sub Test_B3()
     Dim b3Ar(2) As B3, b3Ar2(2) As B3
     Debug.Print LenB(b3Ar(0))
     Debug.Print VarPtr(b3Ar(2)) - VarPtr(b3Ar(1))
+End Sub
+Private Sub TestArrLink()
+    Dim ref&(), s$, SA As SAFEARRAY1D
+    Initialize
+    
+    s = "sdfdasd"
+    
+    With SA
+      .cDims = 1
+      .fFeatures = FADF_FIXEDSIZE_AUTO
+      .cLocks = 1
+      .cbElements = 4
+      .Bounds.cCount = 1
+      .pvData = StrPtr(s) - 4
+    End With
+    
+    lpRef_SA.pvData = VarPtr(s) + ptrSz
+    lpRef(0) = VarPtr(SA)
+    
 End Sub
