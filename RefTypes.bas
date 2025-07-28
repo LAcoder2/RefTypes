@@ -81,6 +81,21 @@ End Type                                '// Although, be aware that this structu
 Private Type MemoryProxy                                           '// The declared type of `Elements()` can be any of
     Elements(LELEMENTS_LBOUND To LELEMENTS_UBOUND) As ProxyElement '// the following: Enum, UDT, or Alias (typedef)
 End Type                                                           '// NOTE: A ProxyElement's Type must be smaller
+'Public Type SAFEARRAYBOUND
+'    cCount              As Long
+'    lBound              As Long
+'End Type
+'Public Type SAFEARRAY1D
+'    cDims               As Integer
+'    fFeatures           As Integer
+'    cbElements          As Long
+'    cLocks              As Long
+'  #If Win64 Then
+'    padding             As Long
+'  #End If
+'    pvData              As LongPtr
+'    Bounds              As SAFEARRAYBOUND
+'End Type
 Private Type B3
     b1 As Byte
     b2 As Byte
@@ -518,23 +533,23 @@ Sub SwapPtr(ByVal p1 As LongPtr, ByVal p2 As LongPtr)
 End Sub
 
 'Аналог CopyMemory
-Sub MemLSet(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
+Sub MemLSet(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal size As Long)
     Dim sDst$, sSrc$, lTmp&
     Dim s1$, s2$
     If IsInitialized Then Else Initialize
     
-    If Size > 3 Then
+    If size > 3 Then
     Else
-        MiniCopy pDst, pSrc, Size
+        MiniCopy pDst, pSrc, size
         Exit Sub
     End If
-    Size = Size - 4
+    size = size - 4
     
     lRef_SA.pvData = pSrc
     lTmp = lRef(0)
-    lRef(0) = Size
+    lRef(0) = size
     lRef2_SA.pvData = pDst
-    lRef2(0) = Size
+    lRef2(0) = size
 
     pSrc = pSrc + 4
     pDst = pDst + 4
@@ -547,8 +562,8 @@ Sub MemLSet(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
     lRef2(0) = lTmp
 End Sub
 'вспомогательная процедура для MemLSet для копирования размера меньше 4 байт.
-Sub MiniCopy(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
-    On Size GoTo 1, 2, 3
+Sub MiniCopy(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal size As Long)
+    On size GoTo 1, 2, 3
     Exit Sub
     If False Then
 1:
@@ -566,6 +581,52 @@ Sub MiniCopy(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal Size As Long)
         b3Ref2_SA.pvData = pDst
         b3Ref2(0) = b3Ref1(0)
     End If
+End Sub
+Function VbaRealloc(ByVal pBgn As LongPtr, ByVal newSize As Long) As LongPtr
+    Dim bMap() As Byte, lp As LongPtr
+    If newSize < 1 Then Exit Function
+    If IsInitialized Then Else Initialize
+    
+    If pBgn Then
+    Else
+        ReDim bMap(newSize - 1)
+        lpRef_SA.pvData = VarPtr(lp) + ptrSz
+        saRef_SA.pvData = lpRef(0)
+        VbaRealloc = saRef(0).pvData ' = VarPtr(bMap(0))
+        saRef(0).pvData = 0
+        Exit Function
+    End If
+    
+    bMapDyn_SA.pvData = pBgn
+    bMapDyn_SA.Bounds.cCount = newSize
+    lpRef_SA.pvData = VarPtr(lp) + ptrSz
+    lpRef(0) = VarPtr(bMapDyn_SA)
+    ReDim Preserve bMap(newSize - 1)
+    lpRef(0) = 0
+    VbaRealloc = bMapDyn_SA.pvData
+End Function
+Function VbaAlloc(ByVal size As LongPtr) As LongPtr
+    Dim bMap() As Byte, lp As LongPtr
+    If IsInitialized Then Else Initialize
+    
+    ReDim bMap(size - 1)
+    lpRef_SA.pvData = VarPtr(lp) + ptrSz
+    saRef_SA.pvData = lpRef(0)
+    With saRef(0)
+      VbaAlloc = .pvData ' = VarPtr(bMap(0))
+      .pvData = 0
+    End With
+End Function
+'Sub VbaFree2(ByVal ptr As LongPtr)
+'    Dim bMap() As Byte, lp As LongPtr
+'    bMap = vbNullString 'Array()
+'    lpRef_SA.pvData = VarPtr(lp) + ptrSz
+'    saRef_SA.pvData = lpRef(0)
+'    saRef(0).pvData = ptr
+'End Sub
+Sub VbaFree(ByVal ptr As LongPtr)
+    Dim s$
+    PutPtr(VarPtr(s)) = ptr
 End Sub
 
 '>>>>>>>>>>>>>>>STRINGS SECTION<<<<<<<<<<<<<<<<<<<'
@@ -826,38 +887,26 @@ Sub ReallocStringB(sSrc$, ByVal newSize&)
     lRef_SA.pvData = bMapDyn_SA.pvData
     lRef(0) = newSize
 End Sub
-Private Sub Test_VbaRealloc()
-    Dim s$, p As LongPtr
-    Initialize
-    
-    p = VbaRealloc(0, 6)
-    
-    lpRef_SA.pvData = VarPtr(s)
-    lpRef(0) = p + 4
-End Sub
-Function VbaRealloc(ByVal pBgn As LongPtr, ByVal newSize As Long) As LongPtr
-    Dim bMap() As Byte, lp As LongPtr
-    If newSize < 1 Then Exit Function
+'аналог SysAllocStringLen
+Function VbaAllocStringLen(ByVal pStr As LongPtr, ByVal strLen As Long) As String
     If IsInitialized Then Else Initialize
     
-    If pBgn Then
-    Else
-        ReDim bMap(newSize - 1)
-        lpRef_SA.pvData = VarPtr(lp) + ptrSz
-        saRef_SA.pvData = lpRef(0)
-        VbaRealloc = saRef(0).pvData ' = VarPtr(bMap(0))
-        saRef(0).pvData = 0
-        Exit Function
-    End If
+    bMap1_SA.pvData = pStr
+    bMap1_SA.Bounds.cCount = strLen * 2
     
-    bMapDyn_SA.pvData = pBgn
-    bMapDyn_SA.Bounds.cCount = newSize
-    lpRef_SA.pvData = VarPtr(lp) + ptrSz
-    lpRef(0) = VarPtr(bMapDyn_SA)
-    ReDim Preserve bMap(newSize - 1)
-    lpRef(0) = 0
-    VbaRealloc = bMapDyn_SA.pvData
+    VbaAllocStringLen = bMap1()
 End Function
+'аналог SysAllocStringByteLen
+Function VbaAllocStringByteLen(ByVal pStr As LongPtr, ByVal strBytelen As Long) As String
+    If IsInitialized Then Else Initialize
+    
+    bMap2_SA.pvData = pStr
+    bMap2_SA.Bounds.cCount = strBytelen
+    
+    VbaAllocStringByteLen = bMap2()
+End Function
+
+'>>>>>>>ARRAY FUNCTIONS<<<<<<<<<<
 Private Sub Example_ShellSortS()
     Dim sAr$()
     
@@ -892,6 +941,51 @@ End Sub
 
 
 '>>>>>>>>>>>TESTS<<<<<<<<<<<<<
+Private Sub Test_VbaAllocStringLen()
+    Dim s1$, s2$, s3$
+    
+    s1 = "df12345da"
+    s2 = VbaAllocStringLen(StrPtr(s1) + 4, 4) '1234
+    s3 = VbaAllocStringByteLen(StrPtr(s1) + 10, 6) '45d
+End Sub
+Private Sub Test_VbaRealloc()
+    Dim s$, p As LongPtr
+    Initialize
+    
+    p = VbaRealloc(0, 6)
+    
+    lpRef_SA.pvData = VarPtr(s)
+    lpRef(0) = p + 4
+End Sub
+Private Sub TestAllocFree()
+    Dim ptr As LongPtr
+    Initialize
+    ptr = VbaAlloc(2)
+    VbaFreeString ptr + 4
+End Sub
+Private Sub Test0MemSize()
+    Dim ptr As LongPtr, lsz As LongPtr, heap As LongPtr, lres&
+    Dim b() As Byte
+    Initialize
+    heap = GetProcessHeap
+    
+    b = vbNullString
+    
+    ptr = GetPtr(ArrPtr(b))
+    saRef_SA.pvData = ptr
+    Debug.Print HeapSize(heap, 0, saRef(0).pvData)
+    Call CoTaskMemFree(saRef(0).pvData)
+    saRef(0).pvData = 0
+'    saRef(0).Bounds.cCount = 0
+    
+'    ptr = VbaAlloc(2)
+'
+'    lres = IsBadReadPtr(ptr, 2)
+'    lsz = HeapSize(heap, 0, ptr)
+'    lres = IsBadReadPtr(ptr, 2)
+    
+'    VbaFree2 ptr
+End Sub
 Private Sub Example_Ref_Making()
     Dim lp As LongPtr, refDesc As SAFEARRAY1D, ref() As LongPtr
     lp = VarPtr(lp)
