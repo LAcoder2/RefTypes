@@ -273,13 +273,16 @@ Function BytStrConv(BytStrInp() As Byte, ByVal Conv As VbStrConv) As Byte()
 End Function
 Private Sub Test_InIntStr()
     Dim s1$, s2$
-    Dim rs1%(), rs2%(), rs1_ As SA1D, rs2_ As SA1D
+    Dim rs1%(), rs2%()
+    Dim rs3() As Byte, rs4() As Byte
+    Dim rs1_ As SA1D, rs2_ As SA1D, rs3_ As SA1D, rs4_ As SA1D
     Dim lres&
     
-    s1 = "gdjl;eriuo":  rs1 = GetStrMap(rs1_, s1)
-    s2 = "l;er":        rs2 = GetStrMap(rs2_, s2)
+    s1 = "gdjl;eriuo":  rs1 = GetStrMap(rs1_, s1): rs3 = GetStrMapB(rs3_, s1)
+    s2 = "l;er":        rs2 = GetStrMap(rs2_, s2): rs4 = GetStrMapB(rs4_, s2)
     
-    lres = InIntStr(rs1, rs2, 4, , 7)
+'    lres = InIntStr(rs1, rs2, 4, , 7)
+    lres = InBytStr(rs3, rs4, 7, , 13)
     
 End Sub
 'аналог instr$() с дополнителным параметром lStop, чтобы указывать позицию окончания поиска.
@@ -288,6 +291,11 @@ Function InIntStr(isCheck%(), isMatch%(), Optional ByVal lstart As Long = 1, _
     Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
     If IsInitialized Then Else Initialize
     
+    lpRef_SA.pData = VarPtr(lstart) - ptrSz * 2
+    If lpRef(0) Then Else Exit Function 'check initialization isCheck
+    lpRef_SA.pData = lpRef_SA.pData + ptrSz
+    If lpRef(0) Then Else Exit Function 'check initialization isMatch
+    
     If Compare = vbBinaryCompare Then
         iMap1_SA.pData = VarPtr(isCheck(1))
         iMap2_SA.pData = VarPtr(isMatch(1))
@@ -295,8 +303,8 @@ Function InIntStr(isCheck%(), isMatch%(), Optional ByVal lstart As Long = 1, _
         Dim isTmp1%(), isTmp2%()
         isTmp1 = IntStrConv(isCheck, vbUpperCase)
         isTmp2 = IntStrConv(isMatch, vbUpperCase)
-        iMap1_SA.pData = VarPtr(isTmp1(0))
-        iMap2_SA.pData = VarPtr(isTmp2(0))
+        iMap1_SA.pData = VarPtr(isTmp1(1))
+        iMap2_SA.pData = VarPtr(isTmp2(1))
     End If
     lenCheck = UBound(isCheck)
     lenMatch = UBound(isMatch)
@@ -314,6 +322,49 @@ Function InIntStr(isCheck%(), isMatch%(), Optional ByVal lstart As Long = 1, _
                 If iMap1(k) = iMap2(j) Then Else GoTo skip
             Next
             InIntStr = i: Exit Function
+        End If
+skip:
+    Next
+End Function
+
+Function InBytStr(bsCheck() As Byte, bsMatch() As Byte, Optional ByVal lstart As Long = 1, _
+    Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = -1) As Long
+    Dim i&, j&, k&, lenCheck&, lenMatch&, bMatch As Byte, lbCheck&, ubCheck&, lbMatch&, ubMatch&
+    If IsInitialized Then Else Initialize
+    
+    lpRef_SA.pData = VarPtr(lstart) - ptrSz * 2
+    If lpRef(0) Then Else Exit Function 'check initialization bsCheck
+    lpRef_SA.pData = lpRef_SA.pData + ptrSz
+    If lpRef(0) Then Else Exit Function 'check initialization bsMatch
+    
+    lbCheck = LBound(bsCheck): ubCheck = UBound(bsCheck)
+    lbMatch = LBound(bsMatch): ubMatch = UBound(bsMatch)
+    If Compare = vbBinaryCompare Then
+        bMap1_SA.pData = VarPtr(bsCheck(lbCheck))
+        bMap2_SA.pData = VarPtr(bsMatch(lbMatch))
+    Else
+        Dim bsTmp1() As Byte, bsTmp2() As Byte
+        bsTmp1 = BytStrConv(bsCheck, vbUpperCase)
+        bsTmp2 = BytStrConv(bsMatch, vbUpperCase)
+        bMap1_SA.pData = VarPtr(bsTmp1(1))
+        bMap2_SA.pData = VarPtr(bsTmp2(1))
+    End If
+    lenCheck = ubCheck - lbCheck
+    lenMatch = ubMatch - lbMatch
+    bMap1_SA.Count = lenCheck
+    bMap2_SA.Count = lenMatch
+    If lStop = -1 Then lStop = lenCheck
+    
+    bMatch = bMap2(1)                                                   'v2
+    For i = lstart To lStop - lenMatch + 1
+        If bMap1(i) <> bMatch Then
+        Else
+            k = i
+            For j = 2 To lenMatch
+                k = k + 1
+                If bMap1(k) = bMap2(j) Then Else GoTo skip
+            Next
+            InBytStr = i: Exit Function
         End If
 skip:
     Next
