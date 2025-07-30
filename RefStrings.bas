@@ -29,11 +29,14 @@ Private Sub Test_MidRef()
     Debug.Print RefToStr(rStr)
 End Sub
 'получение массива integer (который будет использовать на дескриптор SA), замапленного на заданную часть строки.
-Function MidRef(SA As SA1D, sSrc$, ByVal start&, Optional ByVal length&) As Integer()
-    Dim iArRes%(), lp As LongPtr
+Function MidRef(SA As SA1D, sSrc$, Optional ByVal start& = 1, Optional ByVal length&) As Integer()
+    Dim iArRes%(), lp As LongPtr, lnSrc&
     If IsInitialized Then Else Initialize
     
-    If LenB(sSrc) Then Else Exit Function
+    lnSrc = Len(sSrc)
+    If lnSrc Then Else Exit Function
+    If start > 0 Then Else Exit Function
+    If length > 0 Then Else length = lnSrc - start + 1
     
     SA = iMap1_SA
     SA.pData = StrPtr(sSrc) + (start - 1) * 2
@@ -46,9 +49,9 @@ Private Sub Test_iStrConv()
     Dim s$, rs1%(), rs1SA As SA1D, rs2%(), rs2SA As SA1D
     s = "ABCdzN"
     
-    rs1 = MidRef(rs1SAs, 1, Len(s))
+    rs1 = MidRef(rs1SA, s) ', 1, Len(s))
     
-    rs2 = iStrConv(rs1)
+    rs2 = iStrConv(rs1, vbLowerCase)
     
     Debug.Print RefToStr(rs2)
 End Sub
@@ -119,7 +122,7 @@ Function iFromAnsi(bStrInp() As Byte) As Integer()
     
     iFromAnsi = iStrOut
 End Function
-Function iStrConv(iStrInp%(), Optional ByVal Conv As VbStrConv) As Integer()
+Function iStrConv(iStrInp%(), ByVal Conv As VbStrConv) As Integer()
     Const ChrTblSz& = 2340
     Static init As Boolean, LoTbl%(0 To ChrTblSz \ 2 - 1), UpTbl%(0 To ChrTblSz \ 2 - 1)
     Dim i&, strLen&, iStrOut%()
