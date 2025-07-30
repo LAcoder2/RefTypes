@@ -8,28 +8,28 @@ Option Explicit
 
 Public Type RefStr
     Buf() As Integer
-    SA As SA1D
+    sa As SA1D
 End Type
 
 Private Sub TestSALenB()
-    Dim SA As SA1D
-    Debug.Print LenB(SA)
+    Dim sa As SA1D
+    Debug.Print LenB(sa)
 End Sub
-Function RefToStr(rStr%()) As String
+Function IntToStr(rStr%()) As String
     bMap1_SA.pData = VarPtr(rStr(1))
     bMap1_SA.Count = UBound(rStr) * 2 '.Count * 2
-    RefToStr = bMap1
+    IntToStr = bMap1
 End Function
 Private Sub Test_MidRef()
     Dim s$, rStr%(), rStrSA As SA1D
     
     s = "afpiuk44o"
-    rStr = MidRef(s, 3, 4, rStrSA)
-    
-    Debug.Print RefToStr(rStr)
+    rStr = MidRef(rStrSA, s, 3, 4)
+    Debug.Print VarPtr(rStr(1))
+    Debug.Print IntToStr(rStr)
 End Sub
 'получение массива integer (который будет использовать на дескриптор SA), замапленного на заданную часть строки.
-Function MidRef(SA As SA1D, sSrc$, Optional ByVal start& = 1, Optional ByVal length&) As Integer()
+Function MidRef(sa As SA1D, sSrc$, Optional ByVal start& = 1, Optional ByVal length&) As Integer()
     Dim iArRes%(), lp As LongPtr, lnSrc&
     If IsInitialized Then Else Initialize
     
@@ -38,24 +38,59 @@ Function MidRef(SA As SA1D, sSrc$, Optional ByVal start& = 1, Optional ByVal len
     If start > 0 Then Else Exit Function
     If length > 0 Then Else length = lnSrc - start + 1
     
-    SA = iMap1_SA
-    SA.pData = StrPtr(sSrc) + (start - 1) * 2
-    SA.Count = length
-    PutPtr(VarPtr(lp) + ptrSz) = VarPtr(SA)
+    sa = iMap1_SA
+    sa.pData = StrPtr(sSrc) + (start - 1) * 2
+    sa.Count = length
+    PutPtr(VarPtr(lp) + ptrSz) = VarPtr(sa)
     
     MidRef = iArRes
 End Function
-Private Sub Test_iStrConv()
+Private Sub Test_GetStrMap()
+    Dim sAnsi$, sUnic$, istr%(), bstr() As Byte
+    Dim istrSA As SA1D, bstrSA As SA1D
+    
+    sUnic = "лдОлЫФ"
+    sAnsi = StrConv(sUnic, vbFromUnicode)
+    
+    istr = GetStrMap(istrSA, sUnic)
+    bstr = GetStrMapB(bstrSA, sAnsi)
+    
+End Sub
+Function GetStrMap(sa As SA1D, sInp$) As Integer()
+    Dim iMap%(), lp As LongPtr, lnInp&
+    If IsInitialized Then Else Initialize
+    lnInp = Len(sInp)
+    If lnInp Then Else Exit Function
+    sa = iMap1_SA
+    sa.pData = StrPtr(sInp)
+    sa.Count = lnInp
+    lpRef_SA.pData = VarPtr(lp) + ptrSz
+    lpRef(0) = VarPtr(sa)
+    GetStrMap = iMap
+End Function
+Function GetStrMapB(sa As SA1D, sInp$) As Byte()
+    Dim bMap() As Byte, lp As LongPtr, lnInp&
+    If IsInitialized Then Else Initialize
+    lnInp = LenB(sInp)
+    If lnInp Then Else Exit Function
+    sa = bMap1_SA
+    sa.pData = StrPtr(sInp)
+    sa.Count = lnInp
+    lpRef_SA.pData = VarPtr(lp) + ptrSz
+    lpRef(0) = VarPtr(sa)
+    GetStrMapB = bMap
+End Function
+Private Sub Test_IntStrConv()
     Dim s$, rs1%(), rs1SA As SA1D, rs2%(), rs2SA As SA1D
     s = "ABCdzN"
     
     rs1 = MidRef(rs1SA, s) ', 1, Len(s))
     
-    rs2 = iStrConv(rs1, vbLowerCase)
+    rs2 = IntStrConv(rs1, vbLowerCase)
     
-    Debug.Print RefToStr(rs2)
+    Debug.Print IntToStr(rs2)
 End Sub
-Function bToAnsi(iStrInp%()) As Byte()
+Function IntToAnsi(IStrInp%()) As Byte()
     Const ChrTblSz& = 2340
     Static init As Boolean, AnsiTbl(0 To ChrTblSz \ 2 - 1) As Byte ', UnicTbl%(0 To 255)
     Dim i&, strLen&, bStrOut() As Byte
@@ -74,13 +109,13 @@ Function bToAnsi(iStrInp%()) As Byte()
         init = True
     End If
     
-    strLen = UBound(iStrInp)
+    strLen = UBound(IStrInp)
     ReDim bStrOut(1 To strLen)
     For i = 1 To strLen
-        bStrOut(i) = AnsiTbl(iStrInp(i))
+        bStrOut(i) = AnsiTbl(IStrInp(i))
     Next
     
-    bToAnsi = bStrOut
+    IntToAnsi = bStrOut
 End Function
 Private Sub Test_toAnsi_formAnsi()
     Dim s1$, s2$, rs1%(), iUn%(), SA1 As SA1D
@@ -89,13 +124,13 @@ Private Sub Test_toAnsi_formAnsi()
     s1 = "asfАфЦri"
     
     rs1 = MidRef(SA1, s1, 1, Len(s1))
-    bAn = bToAnsi(rs1)
-    iUn = iFromAnsi(b1)
+    bAn = IntToAnsi(rs1)
+    iUn = IntFromAnsi(b1)
 End Sub
-Function iFromAnsi(bStrInp() As Byte) As Integer()
+Function IntFromAnsi(BStrInp() As Byte) As Integer()
     Const ChrTblSz& = 2340
     Static init As Boolean, UnicTbl%(255)
-    Dim i&, j&, strLen&, iStrOut() As Integer
+    Dim i&, j&, strLen&, IStrOut() As Integer
     If init Then
     Else
         If IsInitialized Then Else Initialize
@@ -111,21 +146,39 @@ Function iFromAnsi(bStrInp() As Byte) As Integer()
         init = True
     End If
     
-    Dim Ub&, Lb&
-    Lb = LBound(bStrInp)
-    Ub = UBound(bStrInp)
-    ReDim iStrOut(1 To Ub - Lb + 1)
-    For i = Lb To Ub
+    Dim ub&, lb&
+    lb = LBound(BStrInp)
+    ub = UBound(BStrInp)
+    ReDim IStrOut(1 To ub - lb + 1)
+    For i = lb To ub
         j = j + 1
-        iStrOut(j) = UnicTbl(bStrInp(i))
+        IStrOut(j) = UnicTbl(BStrInp(i))
     Next
     
-    iFromAnsi = iStrOut
+    IntFromAnsi = IStrOut
 End Function
-Function iStrConv(iStrInp%(), ByVal Conv As VbStrConv) As Integer()
+Private Sub TestStrConvAnsi()
+    Dim sU$, sa$, sAUp$, sUUp$
+    sU = "aBCd"
+    sa = StrConv(sU, vbFromUnicode)
+    sAUp = StrConv(sa, vbUpperCase)
+    sUUp = StrConv(sAUp, vbUnicode)
+    sUUp = StrConv(sa, vbUnicode)
+End Sub
+Private Sub Test_IntStrConv2()
+    Dim s$, rs%(), sa As SA1D, isUp%()
+    
+    s = "abcd"
+    rs = GetStrMap(sa, s)
+    
+    isUp = IntStrConv(rs, vbUpperCase)
+    
+    Debug.Print IntToStr(isUp)
+End Sub
+Function IntStrConv(IStrInp%(), ByVal Conv As VbStrConv) As Integer()
     Const ChrTblSz& = 2340
     Static init As Boolean, LoTbl%(0 To ChrTblSz \ 2 - 1), UpTbl%(0 To ChrTblSz \ 2 - 1)
-    Dim i&, strLen&, iStrOut%()
+    Dim i&, strLen&, IStrOut%()
     If init Then
     Else
         If IsInitialized Then Else Initialize
@@ -135,7 +188,7 @@ Function iStrConv(iStrInp%(), ByVal Conv As VbStrConv) As Integer()
         Next
         bMap1_SA.pData = VarPtr(LoTbl(0))
         bMap1_SA.Count = ChrTblSz '(1170 * 2)
-        sChars = bMap1 'RefToStr(LoTbl)
+        sChars = bMap1 'IntToStr(LoTbl)
         
         MovePtr VarPtr(sTmp), VarPtr(StrConv(sChars, vbLowerCase)) + 8
         MemLSet VarPtr(LoTbl(0)), StrPtr(sTmp), ChrTblSz
@@ -143,56 +196,110 @@ Function iStrConv(iStrInp%(), ByVal Conv As VbStrConv) As Integer()
         MovePtr VarPtr(sTmp), VarPtr(StrConv(sChars, vbUpperCase)) + 8
         MemLSet VarPtr(UpTbl(0)), StrPtr(sTmp), ChrTblSz
         
-'        For i = 0 To 255
-'            bAnsi(i) = i
-'        Next
-'        sChars = bAnsi
-'        MovePtr VarPtr(sTmp), VarPtr(StrConv(sChars, vbUnicode)) + 8
-'        MemLSet VarPtr(UnicTbl%(0)), StrPtr(sTmp), &H100 * 2
+        init = True
+    End If
+    
+    strLen = UBound(IStrInp)
+    ReDim IStrOut(1 To strLen)
+    Select Case Conv
+    Case vbUpperCase
+        For i = 1 To strLen
+            IStrOut(i) = UpTbl(IStrInp(i))
+        Next
+    Case vbLowerCase
+        For i = 1 To strLen
+            IStrOut(i) = LoTbl(IStrInp(i))
+        Next
+    End Select
+    
+    IntStrConv = IStrOut
+End Function
+Private Sub Test_BytStrConv()
+    Dim s$, b() As Byte, b2()
+    Dim s2$
+    
+    s = StrConv("abcd", vbFromUnicode)
+    b = s
+    
+    b = BytStrConv(b, vbUpperCase)
+    
+    s2 = StrConv(b, vbUnicode)
+End Sub
+Function BytStrConv(BytStrInp() As Byte, ByVal Conv As VbStrConv) As Byte()
+    Const ChrTblSz& = 256
+    Static init As Boolean, LoTbl(0 To ChrTblSz - 1) As Byte, UpTbl(0 To ChrTblSz - 1) As Byte
+    Dim i&, BytStrOut() As Byte
+    If init Then
+    Else
+        If IsInitialized Then Else Initialize
+        Dim sChars$, sTmp$
+        For i = 1 To 255
+            LoTbl(i) = i
+        Next
+        bMap1_SA.pData = VarPtr(LoTbl(0))
+        bMap1_SA.Count = ChrTblSz
+        sChars = bMap1
+        sChars = StrConv(sChars, vbUnicode)
+        
+        sTmp = StrConv(sChars, vbLowerCase)
+        sTmp = StrConv(sTmp, vbFromUnicode)
+        MemLSet VarPtr(LoTbl(0)), StrPtr(sTmp), ChrTblSz
+        
+        sTmp = StrConv(sChars, vbUpperCase)
+        sTmp = StrConv(sTmp, vbFromUnicode)
+        MemLSet VarPtr(UpTbl(0)), StrPtr(sTmp), ChrTblSz
         
         init = True
     End If
     
-    strLen = UBound(iStrInp)
-    ReDim iStrOut(1 To strLen)
+    Dim lb&, ub&, j&
+    lb = LBound(BytStrInp)
+    ub = UBound(BytStrInp)
+    ReDim BytStrOut(1 To ub - lb + 1)
     Select Case Conv
     Case vbUpperCase
-        For i = 1 To strLen
-            iStrOut(i) = UpTbl(iStrInp(i))
+        For i = lb To ub
+            j = j + 1
+            BytStrOut(j) = UpTbl(BytStrInp(i))
         Next
     Case vbLowerCase
-        For i = 1 To strLen
-            iStrOut(i) = LoTbl(iStrInp(i))
+        For i = lb To ub
+            j = j + 1
+            BytStrOut(j) = LoTbl(BytStrInp(i))
         Next
     End Select
     
-    iStrConv = iStrOut
+    BytStrConv = BytStrOut
 End Function
-Private Sub fsdffsfsdds()
-    Dim i&, chars()
-    ReDim chars(1 To 3000) ', 0 To 0)
-    For i = 1 To 3000
-        chars(i) = ChrW(i)
-    Next
+Private Sub Test_InIntStr()
+    Dim s1$, s2$
+    Dim rs1%(), rs2%(), rs1_ As SA1D, rs2_ As SA1D
+    Dim lres&
+    
+    s1 = "gdjl;eriuo":  rs1 = GetStrMap(rs1_, s1)
+    s2 = "l;er":        rs2 = GetStrMap(rs2_, s2)
+    
+    lres = InIntStr(rs1, rs2, 4, , 7)
+    
 End Sub
 'аналог instr$() с дополнителным параметром lStop, чтобы указывать позицию окончания поиска.
-Function InStrR(rsCheck%(), rsMatch%(), Optional ByVal lstart As Long = 1, _
+Function InIntStr(isCheck%(), isMatch%(), Optional ByVal lstart As Long = 1, _
     Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = -1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
     If IsInitialized Then Else Initialize
     
     If Compare = vbBinaryCompare Then
-        iMap1_SA.pData = StrPtr(sCheck)
-        iMap2_SA.pData = StrPtr(sMatch)
+        iMap1_SA.pData = VarPtr(isCheck(1))
+        iMap2_SA.pData = VarPtr(isMatch(1))
     Else
-        Dim sTmp1$, sTmp2$
-        MovePtr VarPtr(sTmp1), VarPtr(StrConv(sCheck, vbLowerCase)) + 8 'v2
-        MovePtr VarPtr(sTmp2), VarPtr(StrConv(sMatch, vbLowerCase)) + 8
-        iMap1_SA.pData = StrPtr(sTmp1)
-        iMap2_SA.pData = StrPtr(sTmp2)
+        Dim isTmp1%(), isTmp2%()
+        isTmp1 = IntStrConv(isCheck, vbUpperCase)
+        isTmp2 = IntStrConv(isMatch, vbUpperCase)
+        iMap1_SA.pData = VarPtr(isTmp1(0))
+        iMap2_SA.pData = VarPtr(isTmp2(0))
     End If
-    lenCheck = Len(sCheck)
-    lenMatch = Len(sMatch)
+    lenCheck = UBound(isCheck)
+    lenMatch = UBound(isMatch)
     iMap1_SA.Count = lenCheck
     iMap2_SA.Count = lenMatch
     If lStop = -1 Then lStop = lenCheck
@@ -206,7 +313,7 @@ Function InStrR(rsCheck%(), rsMatch%(), Optional ByVal lstart As Long = 1, _
                 k = k + 1
                 If iMap1(k) = iMap2(j) Then Else GoTo skip
             Next
-            InStr2 = i: Exit Function
+            InIntStr = i: Exit Function
         End If
 skip:
     Next
