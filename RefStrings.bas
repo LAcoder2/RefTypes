@@ -30,19 +30,27 @@ Private Sub Test_MidRef()
 End Sub
 'получение массива integer (который будет использовать на дескриптор SA), замапленного на заданную часть строки.
 Function MidRef(sa As SA1D, sSrc$, Optional ByVal start& = 1, Optional ByVal length&) As Integer()
-    Dim iArRes%(), lp As LongPtr, lnSrc&
+    Dim iArRes%(), lp As LongPtr, lnSrc&, maxLen&
     If IsInitialized Then Else Initialize
     
     lnSrc = Len(sSrc)
-    If lnSrc Then Else Exit Function
-    If start > 0 Then Else Exit Function
-    If length > 0 Then Else length = lnSrc - start + 1
+'    If lnSrc Then Else Exit Function
+    If start > 0 Then Else GoTo errArgum
+    If start > lnSrc Then Exit Function
+    If length > 0 Then Else GoTo errArgum
+    maxLen = lnSrc - start
+    If length > maxLen Then length = maxLen
     
     sa = iMap1_SA
     sa.pData = StrPtr(sSrc) + (start - 1) * 2
     sa.Count = length
     PutPtr(VarPtr(lp) + ptrSz) = VarPtr(sa)
     
+    GoTo endFn
+errArgum:
+    Err.Raise 5, , "invalid function argumenct"
+endFn:
+
     MidRef = iArRes
 End Function
 Private Sub Test_GetStrMap()
@@ -288,7 +296,6 @@ End Sub
 'аналог instr$() с дополнителным параметром lStop, чтобы указывать позицию окончания поиска.
 Function InIntStr(isCheck%(), isMatch%(), Optional ByVal lstart As Long = 1, _
     Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = -1) As Long
-    Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
     If IsInitialized Then Else Initialize
     
     lpRef_SA.pData = VarPtr(lstart) - ptrSz * 2
@@ -306,6 +313,8 @@ Function InIntStr(isCheck%(), isMatch%(), Optional ByVal lstart As Long = 1, _
         iMap1_SA.pData = VarPtr(isTmp1(1))
         iMap2_SA.pData = VarPtr(isTmp2(1))
     End If
+    
+    Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
     lenCheck = UBound(isCheck)
     lenMatch = UBound(isMatch)
     iMap1_SA.Count = lenCheck
