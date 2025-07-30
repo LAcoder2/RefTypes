@@ -1,4 +1,3 @@
-Attribute VB_Name = "RefStrings"
 Option Explicit
 
 #If Win64 Then
@@ -9,19 +8,20 @@ Option Explicit
 
 Public Type RefStr
     Buf() As Integer
-    SA As SAFEARRAY1D
+    SA As SA1D
 End Type
+
 Private Sub TestSALenB()
-    Dim SA As SAFEARRAY1D
+    Dim SA As SA1D
     Debug.Print LenB(SA)
 End Sub
 Function RefToStr(rStr%()) As String
-    bMap1_SA.pvData = VarPtr(rStr(1))
-    bMap1_SA.Bounds.cCount = UBound(rStr) * 2 '.Bounds.cCount * 2
+    bMap1_SA.pData = VarPtr(rStr(1))
+    bMap1_SA.Count = UBound(rStr) * 2 '.Count * 2
     RefToStr = bMap1
 End Function
 Private Sub Test_MidRef()
-    Dim s$, rStr%(), rStrSA As SAFEARRAY1D
+    Dim s$, rStr%(), rStrSA As SA1D
     
     s = "afpiuk44o"
     rStr = MidRef(s, 3, 4, rStrSA)
@@ -29,21 +29,21 @@ Private Sub Test_MidRef()
     Debug.Print RefToStr(rStr)
 End Sub
 'получение массива integer (который будет использовать на дескриптор SA), замапленного на заданную часть строки.
-Function MidRef(SA As SAFEARRAY1D, sSrc$, ByVal start&, Optional ByVal length&) As Integer()
+Function MidRef(SA As SA1D, sSrc$, ByVal start&, Optional ByVal length&) As Integer()
     Dim iArRes%(), lp As LongPtr
     If IsInitialized Then Else Initialize
     
     If LenB(sSrc) Then Else Exit Function
     
     SA = iMap1_SA
-    SA.pvData = StrPtr(sSrc) + (start - 1) * 2
-    SA.Bounds.cCount = length
+    SA.pData = StrPtr(sSrc) + (start - 1) * 2
+    SA.Count = length
     PutPtr(VarPtr(lp) + ptrSz) = VarPtr(SA)
     
     MidRef = iArRes
 End Function
 Private Sub Test_iStrConv()
-    Dim s$, rs1%(), rs1SA As SAFEARRAY1D, rs2%(), rs2SA As SAFEARRAY1D
+    Dim s$, rs1%(), rs1SA As SA1D, rs2%(), rs2SA As SA1D
     s = "ABCdzN"
     
     rs1 = MidRef(rs1SAs, 1, Len(s))
@@ -63,8 +63,8 @@ Function bToAnsi(iStrInp%()) As Byte()
         For i = 0 To ChrTblSz - 1
             iChars(i) = i
         Next
-        bMap1_SA.pvData = VarPtr(iChars(0))
-        bMap1_SA.Bounds.cCount = ChrTblSz
+        bMap1_SA.pData = VarPtr(iChars(0))
+        bMap1_SA.Count = ChrTblSz
         sChars = bMap1
         MovePtr VarPtr(sTmp), VarPtr(StrConv(sChars, vbFromUnicode)) + 8
         MemLSet VarPtr(AnsiTbl(0)), StrPtr(sTmp), ChrTblSz \ 2
@@ -80,10 +80,10 @@ Function bToAnsi(iStrInp%()) As Byte()
     bToAnsi = bStrOut
 End Function
 Private Sub Test_toAnsi_formAnsi()
-    Dim s1$, s2$, rs1%(), iUn%(), SA1 As SAFEARRAY1D
+    Dim s1$, s2$, rs1%(), iUn%(), SA1 As SA1D
     Dim bAn() As Byte, b2() As Byte
     
-    s1 = "asfјф÷ri"
+    s1 = "asfАфЦri"
     
     rs1 = MidRef(SA1, s1, 1, Len(s1))
     bAn = bToAnsi(rs1)
@@ -100,8 +100,8 @@ Function iFromAnsi(bStrInp() As Byte) As Integer()
         For i = 0 To 255
             bAnsi(i) = i
         Next
-        bMap1_SA.pvData = VarPtr(bAnsi(0))
-        bMap1_SA.Bounds.cCount = &H100
+        bMap1_SA.pData = VarPtr(bAnsi(0))
+        bMap1_SA.Count = &H100
         sChars = bMap1
         MovePtr VarPtr(sTmp), VarPtr(StrConv(sChars, vbUnicode)) + 8
         MemLSet VarPtr(UnicTbl(0)), StrPtr(sTmp), &H100 * 2
@@ -130,8 +130,8 @@ Function iStrConv(iStrInp%(), Optional ByVal Conv As VbStrConv) As Integer()
         For i = 1 To 1169
             LoTbl(i) = i
         Next
-        bMap1_SA.pvData = VarPtr(LoTbl(0))
-        bMap1_SA.Bounds.cCount = ChrTblSz '(1170 * 2)
+        bMap1_SA.pData = VarPtr(LoTbl(0))
+        bMap1_SA.Count = ChrTblSz '(1170 * 2)
         sChars = bMap1 'RefToStr(LoTbl)
         
         MovePtr VarPtr(sTmp), VarPtr(StrConv(sChars, vbLowerCase)) + 8
@@ -172,26 +172,26 @@ Private Sub fsdffsfsdds()
         chars(i) = ChrW(i)
     Next
 End Sub
-'аналог instr$() с дополнителным параметром lStop, чтобы указывать позицию окончани¤ поиска.
+'аналог instr$() с дополнителным параметром lStop, чтобы указывать позицию окончания поиска.
 Function InStrR(rsCheck%(), rsMatch%(), Optional ByVal lstart As Long = 1, _
     Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = -1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
     If IsInitialized Then Else Initialize
     
     If Compare = vbBinaryCompare Then
-        iMap1_SA.pvData = StrPtr(sCheck)
-        iMap2_SA.pvData = StrPtr(sMatch)
+        iMap1_SA.pData = StrPtr(sCheck)
+        iMap2_SA.pData = StrPtr(sMatch)
     Else
         Dim sTmp1$, sTmp2$
         MovePtr VarPtr(sTmp1), VarPtr(StrConv(sCheck, vbLowerCase)) + 8 'v2
         MovePtr VarPtr(sTmp2), VarPtr(StrConv(sMatch, vbLowerCase)) + 8
-        iMap1_SA.pvData = StrPtr(sTmp1)
-        iMap2_SA.pvData = StrPtr(sTmp2)
+        iMap1_SA.pData = StrPtr(sTmp1)
+        iMap2_SA.pData = StrPtr(sTmp2)
     End If
     lenCheck = Len(sCheck)
     lenMatch = Len(sMatch)
-    iMap1_SA.Bounds.cCount = lenCheck
-    iMap2_SA.Bounds.cCount = lenMatch
+    iMap1_SA.Count = lenCheck
+    iMap2_SA.Count = lenMatch
     If lStop = -1 Then lStop = lenCheck
     
     iMatch = iMap2(1)                                                   'v2
@@ -208,4 +208,3 @@ Function InStrR(rsCheck%(), rsMatch%(), Optional ByVal lstart As Long = 1, _
 skip:
     Next
 End Function
-
