@@ -1,5 +1,6 @@
 Option Explicit
 
+'#Const SafeMode = True
 #If Win64 Then
   Public Const saSz = 32
 #Else
@@ -8,12 +9,12 @@ Option Explicit
 
 Public Type RefStr
     Buf() As Integer
-    sa As SA1D
+    SA As SA1D
 End Type
 
 Private Sub TestSALenB()
-    Dim sa As SA1D
-    Debug.Print LenB(sa)
+    Dim SA As SA1D
+    Debug.Print LenB(SA)
 End Sub
 Function IntToStr(rStr%()) As String
     bMap1_SA.pData = VarPtr(rStr(1))
@@ -29,10 +30,11 @@ Private Sub Test_MidRef()
     Debug.Print IntToStr(rStr)
 End Sub
 'получение массива integer (который будет использовать на дескриптор SA), замапленного на заданную часть строки.
-Function MidRef(sa As SA1D, sSrc$, Optional ByVal start& = 1, Optional ByVal length&) As Integer()
+Function MidRef(SA As SA1D, sSrc$, Optional ByVal start& = 1, Optional ByVal length&) As Integer()
     Dim iArRes%(), lp As LongPtr, lnSrc&, maxLen&
     If IsInitialized Then Else Initialize
     
+  #If SafeMode Then
     lnSrc = Len(sSrc)
 '    If lnSrc Then Else Exit Function
     If start > 0 Then Else GoTo errArgum
@@ -40,18 +42,50 @@ Function MidRef(sa As SA1D, sSrc$, Optional ByVal start& = 1, Optional ByVal len
     If length > 0 Then Else GoTo errArgum
     maxLen = lnSrc - start
     If length > maxLen Then length = maxLen
+  #End If
+   
+    SA = iMap1_SA
+    SA.pData = StrPtr(sSrc) + (start - 1) * 2
+    SA.Count = length
+    PutPtr(VarPtr(lp) + ptrSz) = VarPtr(SA)
     
-    sa = iMap1_SA
-    sa.pData = StrPtr(sSrc) + (start - 1) * 2
-    sa.Count = length
-    PutPtr(VarPtr(lp) + ptrSz) = VarPtr(sa)
-    
+  #If SafeMode Then
     GoTo endFn
 errArgum:
     Err.Raise 5, , "invalid function argumenct"
 endFn:
-
+  #End If
+    
     MidRef = iArRes
+End Function
+Function MidRefB(SA As SA1D, sSrc$, Optional ByVal start& = 1, Optional ByVal length&) As Byte()
+    Dim bArRes() As Byte, lp As LongPtr, lnSrc&, maxLen&
+    If IsInitialized Then Else Initialize
+    
+    lnSrc = LenB(sSrc)
+    
+  #If SafeMode Then
+'    If lnSrc Then Else Exit Function
+    If start > 0 Then Else GoTo errArgum
+    If start > lnSrc Then Exit Function
+    If length > 0 Then Else GoTo errArgum
+    maxLen = lnSrc - start
+    If length > maxLen Then length = maxLen
+  #End If
+    
+    SA = bMap1_SA
+    SA.pData = StrPtr(sSrc) + (start - 1) * 2
+    SA.Count = length
+    PutPtr(VarPtr(lp) + ptrSz) = VarPtr(SA)
+    
+  #If SafeMode Then
+    GoTo endFn
+errArgum:
+    Err.Raise 5, , "invalid function argumenct"
+endFn:
+  #End If
+  
+    MidRef = bArRes
 End Function
 Private Sub Test_GetStrMap()
     Dim sAnsi$, sUnic$, istr%(), bstr() As Byte
@@ -64,28 +98,28 @@ Private Sub Test_GetStrMap()
     bstr = GetStrMapB(bstrSA, sAnsi)
     
 End Sub
-Function GetStrMap(sa As SA1D, sInp$) As Integer()
+Function GetStrMap(SA As SA1D, sInp$) As Integer()
     Dim iMap%(), lp As LongPtr, lnInp&
     If IsInitialized Then Else Initialize
     lnInp = Len(sInp)
     If lnInp Then Else Exit Function
-    sa = iMap1_SA
-    sa.pData = StrPtr(sInp)
-    sa.Count = lnInp
+    SA = iMap1_SA
+    SA.pData = StrPtr(sInp)
+    SA.Count = lnInp
     lpRef_SA.pData = VarPtr(lp) + ptrSz
-    lpRef(0) = VarPtr(sa)
+    lpRef(0) = VarPtr(SA)
     GetStrMap = iMap
 End Function
-Function GetStrMapB(sa As SA1D, sInp$) As Byte()
+Function GetStrMapB(SA As SA1D, sInp$) As Byte()
     Dim bMap() As Byte, lp As LongPtr, lnInp&
     If IsInitialized Then Else Initialize
     lnInp = LenB(sInp)
     If lnInp Then Else Exit Function
-    sa = bMap1_SA
-    sa.pData = StrPtr(sInp)
-    sa.Count = lnInp
+    SA = bMap1_SA
+    SA.pData = StrPtr(sInp)
+    SA.Count = lnInp
     lpRef_SA.pData = VarPtr(lp) + ptrSz
-    lpRef(0) = VarPtr(sa)
+    lpRef(0) = VarPtr(SA)
     GetStrMapB = bMap
 End Function
 Private Sub Test_IntStrConv()
@@ -166,18 +200,18 @@ Function IntFromAnsi(BStrInp() As Byte) As Integer()
     IntFromAnsi = IStrOut
 End Function
 Private Sub TestStrConvAnsi()
-    Dim sU$, sa$, sAUp$, sUUp$
+    Dim sU$, SA$, sAUp$, sUUp$
     sU = "aBCd"
-    sa = StrConv(sU, vbFromUnicode)
-    sAUp = StrConv(sa, vbUpperCase)
+    SA = StrConv(sU, vbFromUnicode)
+    sAUp = StrConv(SA, vbUpperCase)
     sUUp = StrConv(sAUp, vbUnicode)
-    sUUp = StrConv(sa, vbUnicode)
+    sUUp = StrConv(SA, vbUnicode)
 End Sub
 Private Sub Test_IntStrConv2()
-    Dim s$, rs%(), sa As SA1D, isUp%()
+    Dim s$, rs%(), SA As SA1D, isUp%()
     
     s = "abcd"
-    rs = GetStrMap(sa, s)
+    rs = GetStrMap(SA, s)
     
     isUp = IntStrConv(rs, vbUpperCase)
     
