@@ -1,6 +1,6 @@
 Option Explicit
 
-'#Const SafeMode = True
+#Const SafeMode = True
 #If Win64 Then
   Public Const saSz = 32
 #Else
@@ -31,11 +31,12 @@ Private Sub Test_MidRef()
 End Sub
 'получение массива integer (который будет использовать на дескриптор SA), замапленного на заданную часть строки.
 Function MidRef(SA As SA1D, sSrc$, Optional ByVal start& = 1, Optional ByVal length&) As Integer()
-    Dim iArRes%(), lp As LongPtr, lnSrc&, maxLen&
+    Dim iArRes%(), lp As LongPtr, lnSrc&
     If IsInitialized Then Else Initialize
     
-  #If SafeMode Then
     lnSrc = Len(sSrc)
+  #If SafeMode Then
+    Dim maxLen&
 '    If lnSrc Then Else Exit Function
     If start > 0 Then Else GoTo errArgum
     If start > lnSrc Then Exit Function
@@ -59,12 +60,12 @@ endFn:
     MidRef = iArRes
 End Function
 Function MidRefB(SA As SA1D, sSrc$, Optional ByVal start& = 1, Optional ByVal length&) As Byte()
-    Dim bArRes() As Byte, lp As LongPtr, lnSrc&, maxLen&
+    Dim bArRes() As Byte, lp As LongPtr, lnSrc&
     If IsInitialized Then Else Initialize
     
     lnSrc = LenB(sSrc)
-    
   #If SafeMode Then
+    Dim maxLen&
 '    If lnSrc Then Else Exit Function
     If start > 0 Then Else GoTo errArgum
     If start > lnSrc Then Exit Function
