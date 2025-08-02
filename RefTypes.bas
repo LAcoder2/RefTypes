@@ -28,6 +28,7 @@
 Option Private Module
 Option Explicit
 
+#Const SafeMode = True
 #If Win64 = 1 Then
     Private Const Win64 As Integer = 1
     Private Const varSz As LongPtr = 24
@@ -301,16 +302,16 @@ End Sub
 'End Sub
 
 '>>>>>>>>>>>>>>MEMORY SECTION<<<<<<<<<<<<<<<<
-Sub MakeRef(sa As SA1D, ByVal pArrOut As LongPtr, ByVal ElemSize As LongPtr)
+Sub MakeRef(SA As SA1D, ByVal pArrOut As LongPtr, ByVal ElemSize As LongPtr)
 '    Dim pTmp As LongPtr
     If pArrOut > 0 Then Else Exit Sub
     If islpRefInit Then Else Initialize
     
 '    pTmp = lpRef_SA.pData
-    sa = lpRef_SA
-    sa.cbElem = ElemSize
+    SA = lpRef_SA
+    SA.cbElem = ElemSize
     lpRef_SA.pData = pArrOut
-    lpRef(0) = VarPtr(sa)
+    lpRef(0) = VarPtr(SA)
 '    lpRef_SA.pData = pTmp
 End Sub
 
@@ -390,15 +391,15 @@ Property Let PutStr(ByVal Target As LongPtr, ByRef PutStr As String)
     sRef_SA.pData = Target
     sRef(0) = PutStr
 End Property
-Function RefStr(sa As SA1D, Optional ByVal pData As LongPtr) As String()
+Function RefStr(SA As SA1D, Optional ByVal pData As LongPtr) As String()
     Dim lpArTmp() As String, pTmp As LongPtr
     If islpRefInit Then Else Initialize
     
 '    pTmp = lpRef_SA.pData
-    sa = sRef_SA
-    If pData > 0 Then sa.pData = pData
+    SA = sRef_SA
+    If pData > 0 Then SA.pData = pData
     lpRef_SA.pData = VarPtr(pTmp) + ptrSz
-    lpRef(0) = VarPtr(sa)
+    lpRef(0) = VarPtr(SA)
 '    lpRef_SA.pData = pTmp
     
     RefStr = lpArTmp
@@ -499,16 +500,16 @@ Property Let PutPtr(ByVal Target As LongPtr, ByVal PutPtr As LongPtr)
     lpRef_SA.pData = Target
     lpRef(0) = PutPtr
 End Property
-Function RefPtr(sa As SA1D, Optional ByVal Target As LongPtr) As LongPtr()
+Function RefPtr(SA As SA1D, Optional ByVal Target As LongPtr) As LongPtr()
     Dim lpArTmp() As LongPtr, pTmp As LongPtr
     If islpRefInit Then Else Initialize
     
 '    pTmp = lpRef_SA.pData
     
-    sa = lpRef_SA
-    sa.pData = Target
+    SA = lpRef_SA
+    SA.pData = Target
     lpRef_SA.pData = VarPtr(pTmp) + ptrSz
-    lpRef(0) = VarPtr(sa)
+    lpRef(0) = VarPtr(SA)
     
 '    lpRef_SA.pData = pTmp
     
@@ -677,22 +678,22 @@ Sub VbaMemFree(ByVal ptr As LongPtr)
     lpRef(0) = ptr + 4
 End Sub
 
-Function GetBytMap(sa As SA1D, ByVal ptr As LongPtr, ByVal cbCnt As LongPtr) As Byte()
+Function GetBytMap(SA As SA1D, ByVal ptr As LongPtr, ByVal cbCnt As LongPtr) As Byte()
     Dim bMap() As Byte, lp As LongPtr
-    sa = bMap2_SA
-    sa.pData = ptr
-    sa.Count = cbCnt
+    SA = bMap2_SA
+    SA.pData = ptr
+    SA.Count = cbCnt
     lpRef_SA.pData = VarPtr(lp) + ptrSz
-    lpRef(0) = VarPtr(sa)
+    lpRef(0) = VarPtr(SA)
     GetBytMap = bMap
 End Function
-Function GetIntMap(sa As SA1D, ByVal ptr As LongPtr, ByVal ciCnt As LongPtr) As Integer()
+Function GetIntMap(SA As SA1D, ByVal ptr As LongPtr, ByVal ciCnt As LongPtr) As Integer()
     Dim iMap() As Integer, lp As LongPtr
-    sa = iMap2_SA
-    sa.pData = ptr
-    sa.Count = ciCnt
+    SA = iMap2_SA
+    SA.pData = ptr
+    SA.Count = ciCnt
     lpRef_SA.pData = VarPtr(lp) + ptrSz
-    lpRef(0) = VarPtr(sa)
+    lpRef(0) = VarPtr(SA)
     GetIntMap = iMap
 End Function
 
@@ -896,6 +897,42 @@ Function InStrRev2B(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, _
 skip:
     Next
 End Function
+Function InStrLen(ByVal Start As Long, sCheck$, sMatch$, ByVal lenFind As Long, _
+    Optional ByVal Compare As VbCompareMethod) As Long
+    If IsInitialized Then Else Initialize
+    
+    Dim szCheck&, newSize&, pCheck As LongPtr
+    pCheck = StrPtr(sCheck)
+    If pCheck Then Else Exit Function
+    lRef_SA.pData = pCheck - 4
+    szCheck = lRef(0)
+    newSize = (Start + lenFind - 1) * 2
+    If newSize < szCheck Then
+        If newSize > -1 Then Else GoTo errArgum
+        lRef(0) = newSize
+        InStrLen = InStr(Start, sCheck, sMatch, Compare)
+        lRef(0) = szCheck
+    Else
+        InStrLen = InStr(Start, sCheck, sMatch, Compare)
+    End If
+    
+    Exit Function
+errArgum:
+    Err.Raise 5, , "invalid function argumenct"
+End Function
+Sub TestProxyRef(Optional l&, Optional ByVal l0&)
+    Dim s$
+    Initialize
+    s = "sdfdfsadf"
+'    lRef_SA.pData = StrPtr(s) - 4
+    lpRef_SA.pData = VarPtr(l0) - ptrSz
+    lpRef(0) = StrPtr(s) - 4
+    l = 8
+    TestProxyRef_ s, l 'lRef(0)
+End Sub
+Private Sub TestProxyRef_(s$, l&)
+    l = 9
+End Sub
 Private Sub TestResizeString()
     Dim s$: s = "abcd"
     
@@ -1158,14 +1195,14 @@ Private Sub TestLsetString()
     Debug.Print iRef2(7)
 End Sub
 Private Sub TestArray()
-    Dim sAr$(2), pSA As LongPtr, sa As SA1D
+    Dim sAr$(2), pSA As LongPtr, SA As SA1D
     Initialize
     
     pSA = VarPtr(pSA) + ptrSz
 '    pSA = RefPtr(pSA)
     CopyPtr pSA, ByVal ArrPtr(sAr)
     
-    CopyMemory sa, ByVal pSA, LenB(sa)
+    CopyMemory SA, ByVal pSA, LenB(SA)
 End Sub
 Private Sub Test_B3()
     Dim b3Ar(2) As B3, b3Ar2(2) As B3
@@ -1173,12 +1210,12 @@ Private Sub Test_B3()
     Debug.Print VarPtr(b3Ar(2)) - VarPtr(b3Ar(1))
 End Sub
 Private Sub TestArrLink()
-    Dim ref&(), s$, sa As SA1D
+    Dim ref&(), s$, SA As SA1D
     Initialize
     
     s = "sdfdasd"
     
-    With sa
+    With SA
       .Dims = 1
       .Features = FADF_FIXEDSIZE_AUTO
       .Locks = 1
@@ -1188,7 +1225,7 @@ Private Sub TestArrLink()
     End With
     
     lpRef_SA.pData = VarPtr(s) + ptrSz
-    lpRef(0) = VarPtr(sa)
+    lpRef(0) = VarPtr(SA)
 End Sub
 Private Sub Test_VariantUnion()
     Dim vs, vbl, vlp, vd
@@ -1211,19 +1248,19 @@ End Sub
 Private Sub Test_VariantUnion2()
     Dim pvArr As LongPtr, vArr(), _
         vsArr() As sVariant, vlpArr() As lpVariant, vdArr() As dVariant, viArr() As iVariant
-    Dim i&, sa As SA1D, sRef$(), sRefSA As SA1D
+    Dim i&, SA As SA1D, sRef$(), sRefSA As SA1D
     Initialize
     
     vArr = Array("строка", 344.887, "строка2", True, 323252)
     
     pvArr = VarPtr(pvArr) - ptrSz
-    sa = GetSA(GetPtr(pvArr))
-    sa.Features = FADF_FIXEDSIZE_AUTO 'FADF_STATIC Or FADF_FIXEDSIZE
-    sa.Locks = 1
+    SA = GetSA(GetPtr(pvArr))
+    SA.Features = FADF_FIXEDSIZE_AUTO 'FADF_STATIC Or FADF_FIXEDSIZE
+    SA.Locks = 1
 '    PutPtr(pvArr - ptrSz) = VarPtr(SA)     'vsArr
-    PutPtr(pvArr - ptrSz * 2) = VarPtr(sa)
-    PutPtr(pvArr - ptrSz * 3) = VarPtr(sa)
-    PutPtr(pvArr - ptrSz * 4) = VarPtr(sa)
+    PutPtr(pvArr - ptrSz * 2) = VarPtr(SA)
+    PutPtr(pvArr - ptrSz * 3) = VarPtr(SA)
+    PutPtr(pvArr - ptrSz * 4) = VarPtr(SA)
     
     sRef = RefStr(sRefSA)
     For i = 0 To UBound(vArr)
@@ -1243,11 +1280,11 @@ Private Sub Test_VariantUnion2()
 '    PutPtr(pvArr - ptrSz) = 0 'требуется освободить vsArr()
 End Sub
 Private Sub Test_RefStr()
-    Dim s1$, ref$(), sa As SA1D, emp$()
+    Dim s1$, ref$(), SA As SA1D, emp$()
     Initialize
     
     s1 = "asfddafa"
-    ref = RefStr(sa, VarPtr(s1))
+    ref = RefStr(SA, VarPtr(s1))
 '    Erase ref
     Debug.Print ref(0)
 End Sub
