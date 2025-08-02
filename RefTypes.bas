@@ -717,9 +717,9 @@ Private Function StrCompVBA(str1$, str2$) As Long
     
     StrCompVBA = dif
 End Function
-'аналог instr$() с дополнителным параметром lStop, чтобы указывать позицию окончания поиска.
-Function InStr2(sCheck$, sMatch$, Optional ByVal lStart As Long = 1, _
-    Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = -1) As Long
+'аналог instr$() с дополнителным параметром endFind, чтобы указывать позицию окончания поиска.
+Function InStrEnd(sCheck$, sMatch$, Optional ByVal Start As Long = 1, _
+    Optional ByVal Compare As VbCompareMethod, Optional ByVal endFind As Long = -1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
     If IsInitialized Then Else Initialize
     
@@ -737,10 +737,10 @@ Function InStr2(sCheck$, sMatch$, Optional ByVal lStart As Long = 1, _
     lenMatch = Len(sMatch)
     iMap1_SA.Count = lenCheck
     iMap2_SA.Count = lenMatch
-    If lStop = -1 Then lStop = lenCheck
+    If endFind = -1 Then endFind = lenCheck
     
     iMatch = iMap2(1)                                                   'v2
-    For i = lStart To lStop - lenMatch + 1
+    For i = Start To endFind - lenMatch + 1
         If iMap1(i) <> iMatch Then
         Else
             k = i
@@ -748,13 +748,13 @@ Function InStr2(sCheck$, sMatch$, Optional ByVal lStart As Long = 1, _
                 k = k + 1
                 If iMap1(k) = iMap2(j) Then Else GoTo skip
             Next
-            InStr2 = i: Exit Function
+            InStrEnd = i: Exit Function
         End If
 skip:
     Next
 End Function
-Function InStr2B(sCheck$, sMatch$, Optional ByVal lStart As Long = 1, _
-    Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = -1) As Long
+Function InStrEndB(sCheck$, sMatch$, Optional ByVal Start As Long = 1, _
+    Optional ByVal Compare As VbCompareMethod, Optional ByVal endFind As Long = -1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, bMatch As Byte
     If IsInitialized Then Else Initialize
     
@@ -772,10 +772,10 @@ Function InStr2B(sCheck$, sMatch$, Optional ByVal lStart As Long = 1, _
     lenMatch = LenB(sMatch)
     bMap1_SA.Count = lenCheck
     bMap2_SA.Count = lenMatch
-    If lStop = -1 Then lStop = lenCheck
+    If endFind = -1 Then endFind = lenCheck
     
     bMatch = bMap2(1)                                                   'v2
-    For i = lStart To lStop - lenMatch + 1
+    For i = Start To endFind - lenMatch + 1
         If bMap1(i) <> bMatch Then
         Else
             k = i
@@ -783,13 +783,13 @@ Function InStr2B(sCheck$, sMatch$, Optional ByVal lStart As Long = 1, _
                 k = k + 1
                 If bMap1(k) = bMap2(j) Then Else GoTo skip
             Next
-            InStr2B = i: Exit Function
+            InStrEndB = i: Exit Function
         End If
 skip:
     Next
 End Function
-Function InStrRev2(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, _
-    Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = 1) As Long
+Function InStrEndRev(sCheck$, sMatch$, Optional ByVal Start As Long = -1, _
+    Optional ByVal Compare As VbCompareMethod, Optional ByVal endFind As Long = 1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
     If IsInitialized Then Else Initialize
     
@@ -809,13 +809,13 @@ Function InStrRev2(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, _
     lenMatch = Len(sMatch)
     iMap1_SA.Count = lenCheck
     iMap2_SA.Count = lenMatch
-    If lStart = -1 Then lStart = lenCheck
+    If Start = -1 Then Start = lenCheck
     
 '    Dim bgnIter& '                                                     'v1
 '    j = lenMatch
 '    iMatch = iMap2(lenMatch)
 '    bgnIter = lenMatch - 1
-'    For i = lStart To lStop + lenMatch - 1 Step -1
+'    For i = Start To endFind + lenMatch - 1 Step -1
 '        If iMap1(i) <> iMatch Then
 '        Else
 '            k = i
@@ -823,12 +823,12 @@ Function InStrRev2(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, _
 '                k = k - 1
 '                If iMap1(k) = iMap2(j) Then Else GoTo skip
 '            Next
-'            InStrRev2 = k: Exit Function
+'            InStrEndRev = k: Exit Function
 '        End If
 'skip:
 '    Next
     iMatch = iMap2(1)                                                   'v2
-    For i = lStart - lenMatch + 1 To lStop Step -1
+    For i = Start - lenMatch + 1 To endFind Step -1
         If iMap1(i) <> iMatch Then
         Else
             k = i
@@ -836,13 +836,13 @@ Function InStrRev2(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, _
                 k = k + 1
                 If iMap1(k) = iMap2(j) Then Else GoTo skip
             Next
-            InStrRev2 = i: Exit Function
+            InStrEndRev = i: Exit Function
         End If
 skip:
     Next
 End Function
-Function InStrRev2B(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, _
-    Optional ByVal Compare As VbCompareMethod, Optional ByVal lStop As Long = 1) As Long
+Function InStrEndRevB(sCheck$, sMatch$, Optional ByVal Start As Long = -1, _
+    Optional ByVal Compare As VbCompareMethod, Optional ByVal endFind As Long = 1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, bMatch As Byte
     If IsInitialized Then Else Initialize
     
@@ -862,13 +862,13 @@ Function InStrRev2B(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, _
     lenMatch = LenB(sMatch)
     bMap1_SA.Count = lenCheck
     bMap2_SA.Count = lenMatch
-    If lStart = -1 Then lStart = lenCheck
+    If Start = -1 Then Start = lenCheck
     
 '    Dim bgnIter&                                                       'v1
 '    j = lenMatch
 '    bMatch = bmap2(lenMatch)
 '    bgnIter = lenMatch - 1
-'    For i = lStart To lStop + lenMatch - 1 Step -1
+'    For i = Start To endFind + lenMatch - 1 Step -1
 '        If bmap1(i) <> bMatch Then
 '        Else
 '            k = i
@@ -879,12 +879,12 @@ Function InStrRev2B(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, _
 '                    GoTo skip
 '                End If
 '            Next
-'            InStrRev2B = k: Exit Function
+'            InStrEndRevB = k: Exit Function
 '        End If
 'skip:
 '    Next
     bMatch = bMap2(1)                                                   'v2
-    For i = lStart - lenMatch + 1 To lStop Step -1
+    For i = Start - lenMatch + 1 To endFind Step -1
         If bMap1(i) <> bMatch Then
         Else
             k = i
@@ -892,16 +892,16 @@ Function InStrRev2B(sCheck$, sMatch$, Optional ByVal lStart As Long = -1, _
                 k = k + 1
                 If bMap1(k) = bMap2(j) Then Else GoTo skip
             Next
-            InStrRev2B = i: Exit Function
+            InStrEndRevB = i: Exit Function
         End If
 skip:
     Next
 End Function
 Function InStrLen(ByVal Start As Long, sCheck$, sMatch$, ByVal lenFind As Long, _
     Optional ByVal Compare As VbCompareMethod) As Long
+    Dim szCheck&, newSize&, pCheck As LongPtr
     If IsInitialized Then Else Initialize
     
-    Dim szCheck&, newSize&, pCheck As LongPtr
     pCheck = StrPtr(sCheck)
     If pCheck Then Else Exit Function
     lRef_SA.pData = pCheck - 4
@@ -912,21 +912,111 @@ Function InStrLen(ByVal Start As Long, sCheck$, sMatch$, ByVal lenFind As Long, 
         lRef(0) = newSize
         InStrLen = InStr(Start, sCheck, sMatch, Compare)
         lRef(0) = szCheck
-    Else
-        InStrLen = InStr(Start, sCheck, sMatch, Compare)
+    Else: InStrLen = InStr(Start, sCheck, sMatch, Compare)
     End If
     
     Exit Function
 errArgum:
     Err.Raise 5, , "invalid function argumenct"
 End Function
+Function InStrLenB(ByVal Start As Long, sCheck$, sMatch$, ByVal lenFind As Long, _
+    Optional ByVal Compare As VbCompareMethod) As Long
+    Dim szCheck&, newSize&, pCheck As LongPtr
+    If IsInitialized Then Else Initialize
+    
+    pCheck = StrPtr(sCheck)
+    If pCheck Then Else Exit Function
+    lRef_SA.pData = pCheck - 4
+    szCheck = lRef(0)
+    newSize = Start + lenFind - 1
+    If newSize < szCheck Then
+        If newSize > -1 Then Else GoTo errArgum
+        lRef(0) = newSize
+        InStrLenB = InStrB(Start, sCheck, sMatch, Compare)
+        lRef(0) = szCheck
+    Else: InStrLenB = InStrB(Start, sCheck, sMatch, Compare)
+    End If
+    
+    Exit Function
+errArgum:
+    Err.Raise 5, , "invalid function argumenct"
+End Function
+'No safe version without any checks NS = Not Safe
+Function InStrLenNS(ByVal Start As Long, sCheck$, sMatch$, ByVal lenFind As Long, _
+    Optional ByVal Compare As VbCompareMethod, Optional szCheckRef As Long) As Long
+    Dim lTmp&
+'    If IsInitialized Then Else Initialize
+    lTmp = szCheckRef
+    szCheckRef = (Start + lenFind - 1) * 2
+    InStrLenNS = InStr(Start, sCheck, sMatch, Compare)
+    szCheckRef = lTmp
+End Function
+Function InStrLenBNS(ByVal Start As Long, sCheck$, sMatch$, ByVal lenFind As Long, _
+    Optional ByVal Compare As VbCompareMethod, Optional szCheckRef As Long) As Long
+    Dim lTmp&
+'    If IsInitialized Then Else Initialize
+    lTmp = szCheckRef
+    szCheckRef = Start + lenFind - 1
+    InStrLenBNS = InStrB(Start, sCheck, sMatch, Compare)
+    szCheckRef = lTmp
+End Function
+Function InStrEndNS(ByVal Start As Long, sCheck$, sMatch$, ByVal endFind As Long, _
+    Optional ByVal Compare As VbCompareMethod, Optional szCheckRef As Long) As Long
+    Dim lTmp&
+'    If IsInitialized Then Else Initialize
+    lTmp = szCheckRef
+    szCheckRef = endFind * 2
+    InStrEndNS = InStr(Start, sCheck, sMatch, Compare)
+    szCheckRef = lTmp
+End Function
+Function InStrEndBNS(ByVal Start As Long, sCheck$, sMatch$, ByVal endFind As Long, _
+    Optional ByVal Compare As VbCompareMethod, Optional szCheckRef As Long) As Long
+    Dim lTmp&
+'    If IsInitialized Then Else Initialize
+    lTmp = szCheckRef
+    szCheckRef = endFind
+    InStrEndBNS = InStrB(Start, sCheck, sMatch, Compare)
+    szCheckRef = lTmp
+End Function
+Function InStrEndRevNS(sCheck$, sMatch$, ByVal Start As Long, _
+    Optional ByVal Compare As VbCompareMethod, Optional ByVal endFind As Long = 1) As Long
+    Dim sTmp$, pTmp As LongPtr, lTmp&
+'    If IsInitialized Then Else Initialize
+    
+    endFind = endFind - 1
+    pTmp = StrPtr(sCheck) + endFind * 2
+    lRef_SA.pData = pTmp - 4
+    lTmp = lRef(0)
+    lRef(0) = (Start - endFind) * 2
+    lpRef_SA.pData = VarPtr(sTmp)
+    lpRef(0) = pTmp
+    
+    InStrEndRevNS = InStrRev(sTmp, sMatch) + endFind
+    
+    lpRef(0) = 0
+    lRef(0) = lTmp
+End Function
+Private Sub Test_InStrLen()
+    Dim s1$, s2$
+    Dim l1&, l2&, l3&, l4&
+    Initialize
+    s1 = "dretilk';nnll8"
+    s2 = "tilk"
+    
+'    l1 = InStrLen(8, s1, s2, 4)
+'    l2 = InStrLenB(15, s1, s2, 8)
+'    lRef_SA.pData = StrPtr(s1) - 4
+'    l3 = InStrLenNS(8, s1, s2, 4, , lRef(0))
+'    l4 = InStrLenBNS(15, s1, s2, 8, , lRef(0))
+    l1 = InStrRev(s1, s2, 11)
+    l2 = InStrEndRevNS(s1, s2, 7, , 4)
+End Sub
 Sub TestProxyRef(Optional l&, Optional ByVal l0&)
     Dim s$
     Initialize
     s = "sdfdfsadf"
 '    lRef_SA.pData = StrPtr(s) - 4
-    lpRef_SA.pData = VarPtr(l0) - ptrSz
-    lpRef(0) = StrPtr(s) - 4
+    PutPtr(VarPtr(l0) - ptrSz) = StrPtr(s) - 4
     l = 8
     TestProxyRef_ s, l 'lRef(0)
 End Sub
@@ -1135,15 +1225,15 @@ Private Sub TestStrCompVBA()
     lres = StrCompVBA(s2, s1)
     lres2 = StrComp(s2, s1)
 End Sub
-Private Sub Example_InStrRev2()
+Private Sub Example_InStrEndRev()
     Dim sCheck$, sMatch$, lres&, lres2&, cmp As VbCompareMethod
     sCheck = "rtoiutPoIpkj"
     sMatch = "TpoI"
     cmp = TextCompare
-    lres = InStrRev2(sCheck, sMatch, 9, vbTextCompare, 6)
-    lres2 = InStrRev2B(sCheck, sMatch, 18, vbTextCompare, 11)
-    lres = InStr2(sCheck, sMatch, 6, cmp, 9)
-    lres2 = InStr2B(sCheck, sMatch, 11, cmp, 18)
+    lres = InStrEndRev(sCheck, sMatch, 9, vbTextCompare, 6)
+    lres2 = InStrEndRevB(sCheck, sMatch, 18, vbTextCompare, 11)
+    lres = InStrEnd(sCheck, sMatch, 6, cmp, 9)
+    lres2 = InStrEndB(sCheck, sMatch, 11, cmp, 18)
     Stop
 End Sub
 Private Sub TestiRef()
