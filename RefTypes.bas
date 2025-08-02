@@ -991,7 +991,25 @@ Function InStrEndRevNS(sCheck$, sMatch$, ByVal Start As Long, _
     lpRef_SA.pData = VarPtr(sTmp)
     lpRef(0) = pTmp
     
-    InStrEndRevNS = InStrRev(sTmp, sMatch) + endFind
+    InStrEndRevNS = InStrRev(sTmp, sMatch, , Compare) + endFind
+    
+    lpRef(0) = 0
+    lRef(0) = lTmp
+End Function
+Function InStrLenRevNS(sCheck$, sMatch$, ByVal Start As Long, _
+    Optional ByVal Compare As VbCompareMethod, Optional ByVal lenFind As Long = -1) As Long
+    Dim sTmp$, pTmp As LongPtr, lTmp&, lOff&
+'    If IsInitialized Then Else Initialize
+    
+    lOff = Start - lenFind
+    pTmp = StrPtr(sCheck) + lOff * 2
+    lRef_SA.pData = pTmp - 4
+    lTmp = lRef(0)
+    lRef(0) = lenFind * 2
+    lpRef_SA.pData = VarPtr(sTmp)
+    lpRef(0) = pTmp
+    
+    InStrLenRevNS = InStrRev(sTmp, sMatch, lenFind, Compare) + lOff
     
     lpRef(0) = 0
     lRef(0) = lTmp
@@ -1009,7 +1027,8 @@ Private Sub Test_InStrLen()
 '    l3 = InStrLenNS(8, s1, s2, 4, , lRef(0))
 '    l4 = InStrLenBNS(15, s1, s2, 8, , lRef(0))
     l1 = InStrRev(s1, s2, 11)
-    l2 = InStrEndRevNS(s1, s2, 7, , 4)
+'    l2 = InStrEndRevNS(s1, s2, 7, , 4)
+    l3 = InStrLenRevNS(s1, s2, 7, , 4)
 End Sub
 Sub TestProxyRef(Optional l&, Optional ByVal l0&)
     Dim s$
