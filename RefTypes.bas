@@ -904,6 +904,42 @@ Function InStrEndRevB(sCheck$, sMatch$, Optional ByVal Start As Long = -1, _
 skip:
     Next
 End Function
+Function InStrLenRevB(sCheck$, sMatch$, Optional ByVal Start As Long = -1, _
+    Optional ByVal Compare As VbCompareMethod, Optional ByVal Length As Long = 1) As Long
+    Dim i&, j&, k&, lenCheck&, lenMatch&, bMatch As Byte
+    If IsInitialized Then Else Initialize
+    
+    If Compare = vbBinaryCompare Then
+        bMap1_SA.pData = StrPtr(sCheck)
+        bMap2_SA.pData = StrPtr(sMatch)
+    Else
+        Dim sTmp1$, sTmp2$
+        sTmp1 = UCase$(sCheck)
+        sTmp2 = UCase$(sMatch)
+        bMap1_SA.pData = StrPtr(sTmp1)
+        bMap2_SA.pData = StrPtr(sTmp2)
+    End If
+    lenCheck = LenB(sCheck)
+    lenMatch = LenB(sMatch)
+    bMap1_SA.Count = lenCheck
+    bMap2_SA.Count = lenMatch
+    If Start = -1 Then Start = lenCheck
+    
+    bMatch = bMap2(1)                                                   'v2
+    For i = Start - lenMatch + 1 To Start - Length + 1 Step -1
+        If bMap1(i) <> bMatch Then
+        Else
+            k = i
+            For j = 2 To lenMatch
+                k = k + 1
+                If bMap1(k) = bMap2(j) Then Else GoTo skip
+            Next
+            InStrLenRevB = i: Exit Function
+        End If
+skip:
+    Next
+End Function
+
 Function InStrLen(ByVal Start As Long, sCheck$, sMatch$, ByVal lenFind As Long, _
     Optional ByVal Compare As VbCompareMethod) As Long
     Dim szCheck&, newSize&, pCheck As LongPtr
@@ -1107,7 +1143,7 @@ Sub ReallocStringB(sSrc$, ByVal newSize&)
     lRef_SA.pData = bMapDyn_SA.pData
     lRef(0) = newSize
 End Sub
-'аналог SysAllocStringLen
+'аналог SysAllocStringLen Функции копирующей заданный буфер в новую bstr-строку
 Function VbaMemAllocStringLen(ByVal pStr As LongPtr, ByVal strlen As Long) As String
     If IsInitialized Then Else Initialize
     
@@ -1172,10 +1208,11 @@ Function StartsWith(sCheck$, sMatch$) As Boolean
 End Function
 'no ref. used
 Function EndsWith(sCheck$, sMatch$) As Boolean
-    Dim szCheck&, szMatch&
-    szCheck = LenB(sCheck)
-    szMatch = LenB(sMatch)
-    EndsWith = InStrB(szCheck - szMatch + 1, sCheck, sMatch, szMatch)
+'    Dim szCheck&, szMatch&                                    'v1
+'    szCheck = LenB(sCheck)
+'    szMatch = LenB(sMatch)
+'    EndsWith = InStrB(szCheck - szMatch + 1, sCheck, sMatch, szMatch)
+    EndsWith = InStrLenRevB(sCheck, sMatch, , , LenB(sMatch)) 'v2
 End Function
 'no ref. used
 Function Repeat(Count&, sSrc$) As String
@@ -1229,6 +1266,13 @@ Private Sub Test_StringB()
 End Sub
 
 '>>>>>>>>>>>TESTS<<<<<<<<<<<<<
+Private Sub Test_InStrLenRevB()
+    Dim s1$, s2$, lres1&, lres2&
+    s1 = "kdsFddLjklk" '22-10 13
+    s2 = "jklk"
+'    lres1 = InStrRev(s1, s2)
+    lres2 = InStrLenRevB(s1, s2, , , 8)
+End Sub
 Private Sub TestVarMoveString()
     Dim v, s$
     v = "sdfdasfdas"
@@ -1240,11 +1284,11 @@ Private Sub Test_Repeat()
     s2 = Repeat(3, s)
 End Sub
 Private Sub Test_StartsWith_EndsWith()
-    Dim s1$, s2$, bl As Boolean
+    Dim s1$, s2$, bl1 As Boolean, bl2 As Boolean
     s1 = "телевизор"
     
-    bl = StartsWith(s1, "тел")
-    bl = EndsWith(s1, "изор")
+    bl1 = StartsWith(s1, "тел")
+    bl2 = EndsWith(s1, "изор")
 End Sub
 Private Sub Test_VbaMemAllocStringLen()
     Dim s1$, s2$, s3$
