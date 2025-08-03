@@ -728,8 +728,8 @@ Function InStrEnd(sCheck$, sMatch$, Optional ByVal Start As Long = 1, _
         iMap2_SA.pData = StrPtr(sMatch)
     Else
         Dim sTmp1$, sTmp2$
-        MovePtr VarPtr(sTmp1), VarPtr(StrConv(sCheck, vbLowerCase)) + 8 'v2
-        MovePtr VarPtr(sTmp2), VarPtr(StrConv(sMatch, vbLowerCase)) + 8
+        sTmp1 = UCase$(sCheck)
+        sTmp2 = UCase$(sMatch)
         iMap1_SA.pData = StrPtr(sTmp1)
         iMap2_SA.pData = StrPtr(sTmp2)
     End If
@@ -763,8 +763,8 @@ Function InStrEndB(sCheck$, sMatch$, Optional ByVal Start As Long = 1, _
         bMap2_SA.pData = StrPtr(sMatch)
     Else
         Dim sTmp1$, sTmp2$
-        MovePtr VarPtr(sTmp1), VarPtr(StrConv(sCheck, vbLowerCase)) + 8 'v2
-        MovePtr VarPtr(sTmp2), VarPtr(StrConv(sMatch, vbLowerCase)) + 8
+        sTmp1 = UCase$(sCheck)
+        sTmp2 = UCase$(sMatch)
         bMap1_SA.pData = StrPtr(sTmp1)
         bMap2_SA.pData = StrPtr(sTmp2)
     End If
@@ -798,10 +798,8 @@ Function InStrEndRev(sCheck$, sMatch$, Optional ByVal Start As Long = -1, _
         iMap2_SA.pData = StrPtr(sMatch)
     Else
         Dim sTmp1$, sTmp2$
-'        sTmp1 = StrConv(sCheck, vbLowerCase)                           'v1
-'        sTmp2 = StrConv(sMatch, vbLowerCase)
-        MovePtr VarPtr(sTmp1), VarPtr(StrConv(sCheck, vbLowerCase)) + 8 'v2
-        MovePtr VarPtr(sTmp2), VarPtr(StrConv(sMatch, vbLowerCase)) + 8
+        sTmp1 = UCase$(sCheck)
+        sTmp2 = UCase$(sMatch)
         iMap1_SA.pData = StrPtr(sTmp1)
         iMap2_SA.pData = StrPtr(sTmp2)
     End If
@@ -851,10 +849,8 @@ Function InStrEndRevB(sCheck$, sMatch$, Optional ByVal Start As Long = -1, _
         bMap2_SA.pData = StrPtr(sMatch)
     Else
         Dim sTmp1$, sTmp2$
-'        sTmp1 = StrConv(sCheck, vbLowerCase)                           'v1
-'        sTmp2 = StrConv(sMatch, vbLowerCase)
-        MovePtr VarPtr(sTmp1), VarPtr(StrConv(sCheck, vbLowerCase)) + 8 'v2
-        MovePtr VarPtr(sTmp2), VarPtr(StrConv(sMatch, vbLowerCase)) + 8
+        sTmp1 = UCase$(sCheck)
+        sTmp2 = UCase$(sMatch)
         bMap1_SA.pData = StrPtr(sTmp1)
         bMap2_SA.pData = StrPtr(sTmp2)
     End If
@@ -1101,11 +1097,11 @@ Sub ReallocStringB(sSrc$, ByVal newSize&)
     lRef(0) = newSize
 End Sub
 'аналог SysAllocStringLen
-Function VbaMemAllocStringLen(ByVal pStr As LongPtr, ByVal strLen As Long) As String
+Function VbaMemAllocStringLen(ByVal pStr As LongPtr, ByVal strlen As Long) As String
     If IsInitialized Then Else Initialize
     
     bMap1_SA.pData = pStr
-    bMap1_SA.Count = strLen * 2
+    bMap1_SA.Count = strlen * 2
     
     VbaMemAllocStringLen = bMap1()
 End Function
