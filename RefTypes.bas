@@ -554,6 +554,17 @@ Sub MovePtr(ByVal pDst As LongPtr, ByVal pSrc As LongPtr)
     lpRef(0) = lpRef2(0)
     lpRef2(0) = 0
 End Sub
+'перемещение указателя строки из Variant в String
+Function VarMoveStr(vStr) As String
+    If varType(vStr) = vbString Then
+        If IsInitialized Then Else Initialize
+        lpRef_SA.pData = VarPtr(VarMoveStr)
+        lpRef2_SA.pData = VarPtr(vStr) + 8
+        lpRef(0) = lpRef2(0)
+        lpRef2(0) = 0
+    End If
+End Function
+
 Private Sub TestMoveStr()
     Dim s1$, s2$
     s1 = "sdfa"
@@ -1168,16 +1179,61 @@ Function EndsWith(sCheck$, sMatch$) As Boolean
 End Function
 'no ref. used
 Function Repeat(Count&, sSrc$) As String
-    Dim lnSrc&, lnRes&, i&
-    lnSrc = Len(sSrc)
-    lnRes = lnSrc * Count
-    Repeat = String(lnRes, vbNullChar)
-    For i = 1 To lnRes - lnSrc + 1 Step lnSrc
-        Mid$(Repeat, i, lnSrc) = sSrc
+'    Dim lnSrc&, lnRes&, i&                     'v1
+'    lnSrc = Len(sSrc)
+'    lnRes = lnSrc * Count
+'    Repeat = String(lnRes, vbNullChar)
+'    For i = 1 To lnRes - lnSrc + 1 Step lnSrc
+'        Mid$(Repeat, i, lnSrc) = sSrc
+'    Next
+    Dim pDst As LongPtr, pSrc As LongPtr, szSrc& 'v2
+    If IsInitialized Then Else Initialize
+    pSrc = StrPtr(sSrc)
+    szSrc = LenB(sSrc)
+    Repeat = String((szSrc \ 2) * Count, vbNullChar)
+    pDst = StrPtr(Repeat)
+    For pDst = pDst To pDst + szSrc * (Count - 1) Step szSrc
+        MemLSet pDst, pSrc, szSrc
     Next
 End Function
+Function StringB(ByVal Num As Long, Char) As String
+    Dim bChar As Byte, i&, bBuf() As Byte
+    If IsInitialized Then Else Initialize
+    If varType(Char) = vbString Then
+        bChar = Asc(Char)
+    ElseIf IsNumeric(Char) Then
+        If Char > -1 Then Else Exit Function
+        bChar = Char
+    Else: Exit Function
+    End If
+    ReDim bBuf(Num + 5)
+    If bChar Then
+        For i = 4 To 3 + Num
+            bBuf(i) = bChar
+        Next
+    End If
+    lpRef_SA.pData = VarPtr(i) - ptrSz
+    saRef_SA.pData = lpRef(0)
+    lRef_SA.pData = saRef(0).pData ' VarPtr(bBuf(0))
+    lRef(0) = Num
+    lpRef_SA.pData = VarPtr(StringB)
+    lpRef(0) = saRef(0).pData + 4
+'    saRef(0).Count = 0
+    saRef(0).pData = 0
+End Function
+Private Sub Test_StringB()
+    Dim s$, s2$
+    
+    s = StringB(10, vbNullChar)
+    s2 = String(10, 0)
+End Sub
 
 '>>>>>>>>>>>TESTS<<<<<<<<<<<<<
+Private Sub TestVarMoveString()
+    Dim v, s$
+    v = "sdfdasfdas"
+    s = VarMoveStr(v)
+End Sub
 Private Sub Test_Repeat()
     Dim s$, s2$
     s = "ha"
