@@ -262,12 +262,12 @@ Private Sub InitCharTables()
     isCharTablesInit = True
 End Sub
 Function IntToAnsi(IntStrInp%()) As Byte()
-    Dim i&, strLen&, BytStrOut() As Byte
+    Dim i&, strlen&, BytStrOut() As Byte
     If isCharTablesInit Then Else InitCharTables
     
-    strLen = UBound(IntStrInp)
-    ReDim BytStrOut(1 To strLen)
-    For i = 1 To strLen
+    strlen = UBound(IntStrInp)
+    ReDim BytStrOut(1 To strlen)
+    For i = 1 To strlen
         BytStrOut(i) = UtoATbl(IntStrInp(i))
     Next
     
@@ -284,7 +284,7 @@ Private Sub Test_toAnsi_formAnsi()
     iUn = IntFromAnsi(bAn)
 End Sub
 Function IntFromAnsi(BytStrInp() As Byte) As Integer()
-    Dim i&, j&, ub&, lb&, strLen&, IntStrOut() As Integer
+    Dim i&, j&, ub&, lb&, strlen&, IntStrOut() As Integer
     If isCharTablesInit Then Else InitCharTables
     
     lb = LBound(BytStrInp)
@@ -316,23 +316,23 @@ Private Sub Test_IntStrConv2()
     Debug.Print IntToStr(isUp)
 End Sub
 Function IntStrConv(IntStrInp() As Integer, ByVal Conv As VbStrConv) As Integer()
-    Dim i&, strLen&, IntStrOut%()
+    Dim i&, strlen&, IntStrOut%()
     If isCharTablesInit Then Else InitCharTables
         
-    strLen = UBound(IntStrInp)
-    ReDim IntStrOut(1 To strLen)
+    strlen = UBound(IntStrInp)
+    ReDim IntStrOut(1 To strlen)
     Select Case Conv
     Case vbUpperCase
-        For i = 1 To strLen
+        For i = 1 To strlen
             IntStrOut(i) = UUpTbl(IntStrInp(i))
         Next
     Case vbLowerCase
-        For i = 1 To strLen
+        For i = 1 To strlen
             IntStrOut(i) = ULoTbl(IntStrInp(i))
         Next
     Case vbProperCase
         Dim sTmp$, strSz&
-        strSz = strLen * 2
+        strSz = strlen * 2
         bMap2_SA.pData = VarPtr(IntStrInp(1))
         bMap2_SA.Count = strSz
         sTmp = bMap2()
@@ -388,20 +388,103 @@ Function BytStrConv(BytStrInp() As Byte, ByVal Conv As VbStrConv) As Byte()
     
     BytStrConv = BytStrOut
 End Function
+Function UCaseInt(IntStrInp() As Integer) As Integer()
+    Dim i&, strlen&, arRes() As Integer
+    If isCharTablesInit Then Else InitCharTables
+    strlen = UBound(IntStrInp)
+    ReDim arRes(1 To strlen)
+    For i = 1 To strlen
+        arRes(j) = UUpTbl(IntStrInp(i))
+    Next
+    UCaseInt = arRes
+End Function
+Sub UCaseBufInt(IntStr() As Integer)
+    Dim i&
+    If isCharTablesInit Then Else InitCharTables
+    For i = 1 To UBound(IntStr)
+        IntStr(i) = UUpTbl(IntStr(i))
+    Next
+End Sub
+Function LCaseInt(IntStrInp() As Integer) As Integer()
+    Dim i&, strlen&, arRes() As Integer
+    If isCharTablesInit Then Else InitCharTables
+    strlen = UBound(IntStrInp)
+    ReDim arRes(1 To strlen)
+    For i = 1 To strlen
+        arRes(j) = ULoTbl(IntStrInp(i))
+    Next
+    LCaseInt = arRes
+End Function
+Sub LCaseBufInt(IntStr() As Integer)
+    Dim i&
+    If isCharTablesInit Then Else InitCharTables
+    For i = 1 To UBound(IntStr)
+        IntStr(i) = ULoTbl(IntStr(i))
+    Next
+End Sub
 'Аналог UCase для байтового массива
 Function UCaseByt(BytStrInp() As Byte) As Byte()
-    Dim i&, lb&, ub&, j&, BytStrOut() As Byte
-    
-    lb = LBound(BytStrInp)
-    ub = UBound(BytStrInp)
-    ReDim BytStrOut(1 To ub - lb + 1)
+    Dim i&, lb&, ub&, j&, arRes() As Byte
+    If isCharTablesInit Then Else InitCharTables
+    lb = LBound(BytStrInp): ub = UBound(BytStrInp)
+    ReDim arRes(1 To ub - lb + 1)
     For i = lb To ub
         j = j + 1
-        BytStrOut(j) = AUpTbl(BytStrInp(i))
+        arRes(j) = AUpTbl(BytStrInp(i))
     Next
-    
-    UCaseByt = BytStrOut
+    UCaseByt = arRes
 End Function
+Sub UCaseBufByt(BytStr() As Byte)
+    Dim i&
+    If isCharTablesInit Then Else InitCharTables
+    For i = LBound(BytStr) To UBound(BytStr)
+        BytStr(i) = AUpTbl(BytStr(i))
+    Next
+End Sub
+Function LCaseByt(BytStrInp() As Byte) As Byte()
+    Dim i&, lb&, ub&, j&, arRes() As Byte
+    If isCharTablesInit Then Else InitCharTables
+    lb = LBound(BytStrInp): ub = UBound(BytStrInp)
+    ReDim arRes(1 To ub - lb + 1)
+    For i = lb To ub
+        j = j + 1
+        arRes(j) = ALoTbl(BytStrInp(i))
+    Next
+    LCaseByt = arRes
+End Function
+Sub LCaseBufByt(BytStr() As Byte)
+    Dim i&
+    If isCharTablesInit Then Else InitCharTables
+    For i = LBound(BytStr) To UBound(BytStr)
+        BytStr(i) = ALoTbl(BytStr(i))
+    Next
+End Sub
+Sub UCaseBuf(sBuf As String)
+    Dim i&, pBuf As LongPtr, strlen&
+    pBuf = StrPtr(sBuf)
+    If pBuf Then Else Exit Sub
+    If isCharTablesInit Then Else InitCharTables
+    
+    strlen = Len(sBuf)
+    iMap2_SA.pData = StrPtr(sBuf)
+    iMap2_SA.Count = strlen
+    For i = 1 To strlen
+        iMap2(i) = UUpTbl(iMap2(i))
+    Next
+End Sub
+Sub LCaseBuf(sBuf As String)
+    Dim i&, pBuf As LongPtr, strlen&
+    pBuf = StrPtr(sBuf)
+    If pBuf Then Else Exit Sub
+    If isCharTablesInit Then Else InitCharTables
+    
+    strlen = Len(sBuf)
+    iMap2_SA.pData = StrPtr(sBuf)
+    iMap2_SA.Count = strlen
+    For i = 1 To strlen
+        iMap2(i) = ULoTbl(iMap2(i))
+    Next
+End Sub
 Private Function ToAnsi(sInp$) As String
     MovePtr VarPtr(ToAnsi), VarPtr(StrConv(sInp, vbFromUnicode)) + 8
 End Function
@@ -438,8 +521,8 @@ Function InIntStr(isCheck%(), isMatch%(), Optional ByVal lStart As Long = 1, _
         iMap2_SA.pData = VarPtr(isMatch(1))
     Else
         Dim isTmp1%(), isTmp2%()
-        isTmp1 = IntStrConv(isCheck, vbUpperCase)
-        isTmp2 = IntStrConv(isMatch, vbUpperCase)
+        isTmp1 = UCaseInt(isCheck)
+        isTmp2 = UCaseInt(isMatch)
         iMap1_SA.pData = VarPtr(isTmp1(1))
         iMap2_SA.pData = VarPtr(isTmp2(1))
     End If
@@ -483,8 +566,8 @@ Function InBytStr(bsCheck() As Byte, bsMatch() As Byte, Optional ByVal lStart As
         bMap2_SA.pData = VarPtr(bsMatch(LbMatch))
     Else
         Dim bsTmp1() As Byte, bsTmp2() As Byte
-        bsTmp1 = BytStrConv(bsCheck, vbUpperCase)
-        bsTmp2 = BytStrConv(bsMatch, vbUpperCase)
+        bsTmp1 = UCaseByt(bsCheck)
+        bsTmp2 = UCaseByt(bsMatch)
         bMap1_SA.pData = VarPtr(bsTmp1(1))
         bMap2_SA.pData = VarPtr(bsTmp2(1))
     End If
@@ -519,8 +602,8 @@ Function InIntStrRev(isCheck%(), isMatch%(), Optional ByVal lStart As Long = -1,
         iMap2_SA.pData = VarPtr(isMatch(1))
     Else
         Dim isTmp1%(), isTmp2%()
-        isTmp1 = IntStrConv(isCheck, vbUpperCase)
-        isTmp2 = IntStrConv(isMatch, vbUpperCase)
+        isTmp1 = UCaseInt(isCheck)
+        isTmp2 = UCaseInt(isMatch)
         iMap1_SA.pData = VarPtr(isTmp1(1))
         iMap2_SA.pData = VarPtr(isTmp2(1))
     End If
@@ -558,8 +641,8 @@ Function InBytStrRev(bsCheck() As Byte, bsMatch() As Byte, Optional ByVal lStart
         bMap2_SA.pData = VarPtr(bsMatch(LbMatch))
     Else
         Dim bsTmp1() As Byte, bsTmp2() As Byte
-        bsTmp1 = BytStrConv(bsCheck, vbUpperCase)
-        bsTmp2 = BytStrConv(bsMatch, vbUpperCase)
+        bsTmp1 = UCaseByt(bsCheck)
+        bsTmp2 = UCaseByt(bsMatch)
         bMap1_SA.pData = VarPtr(bsTmp1(1))
         bMap2_SA.pData = VarPtr(bsTmp2(1))
     End If
