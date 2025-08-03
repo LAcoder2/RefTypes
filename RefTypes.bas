@@ -1147,6 +1147,29 @@ Sub ShellSortS(Arr() As String, _
         j = j \ 2
     Loop
 End Sub
+Function StartsWith(sCheck$, sMatch$) As Boolean
+    If IsInitialized Then Else Initialize
+    lRef_SA.pData = StrPtr(sCheck) - 4
+    lRef2_SA.pData = StrPtr(sMatch) - 4
+    Dim lTmp&: lTmp = lRef(0)
+    If lTmp < lRef2(0) Then Exit Function
+    lRef(0) = lRef2(0)
+    StartsWith = (sCheck = sMatch)
+    lRef(0) = lTmp
+End Function
+Function EndsWith(sCheck$, sMatch$) As Boolean
+    Dim szCheck&, szMatch&
+    szCheck = LenB(sCheck)
+    szMatch = LenB(sMatch)
+    EndsWith = InStrB(szCheck - szMatch + 1, sCheck, sMatch, szMatch)
+End Function
+Private Sub Test_StartsWith_EndsWith()
+    Dim s1$, s2$, bl As Boolean
+    s1 = "телевизор"
+    
+    bl = StartsWith(s1, "тел")
+    bl = EndsWith(s1, "aзор")
+End Sub
 
 
 '>>>>>>>>>>>TESTS<<<<<<<<<<<<<
