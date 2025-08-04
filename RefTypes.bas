@@ -1029,39 +1029,6 @@ Function VbaMemAllocStringByteLen(ByVal pStr As LongPtr, ByVal strBytelen As Lon
     
     VbaMemAllocStringByteLen = bMap2()
 End Function
-
-'>>>>>>>ARRAY FUNCTIONS<<<<<<<<<<
-Private Sub Example_ShellSortS()
-    Dim sAr$()
-    
-    sAr = Split("яблоки Груши аппельсины Кориандр манго")
-    
-    ShellSortS sAr, Descending, vbTextCompare
-End Sub
-'http://www.excelworld.ru/board/vba/tricks/sort_array_shell/9-1-0-32
-Sub ShellSortS(Arr() As String, _
-    Optional ByVal Order As SortOrder = Ascending, Optional ByVal Comp As VbCompareMethod)
-    Dim Limit&, Switch&, i&, j&, ij&, ub&
-    If IsInitialized Then Else Initialize
-    
-    ub = UBound(Arr)
-    j = (ub + 1) \ 2
-    Do While j > 0
-        Limit = ub - j
-        Do
-            Switch = -1
-            For i = 0 To Limit
-                ij = i + j
-                If StrComp(Arr(i), Arr(ij), Comp) = Order Then
-                    SwapPtr VarPtr(Arr(i)), VarPtr(Arr(ij))
-                    Switch = i
-                End If
-            Next
-            Limit = Switch - j
-        Loop While Switch >= 0
-        j = j \ 2
-    Loop
-End Sub
 Function StartsWith(sCheck$, sMatch$) As Boolean
     If IsInitialized Then Else Initialize
     Dim lTmp&, szMatch&
@@ -1074,13 +1041,12 @@ Function StartsWith(sCheck$, sMatch$) As Boolean
         lRef(0) = lTmp
     End If
 End Function
-'no ref. used
 Function EndsWith(sCheck$, sMatch$) As Boolean
-'    Dim szCheck&, szMatch&                                    'v1
-'    szCheck = LenB(sCheck)
-'    szMatch = LenB(sMatch)
-'    EndsWith = InStrB(szCheck - szMatch + 1, sCheck, sMatch, szMatch)
-    EndsWith = InStrLenRevB(sCheck, sMatch, , , LenB(sMatch)) 'v2
+    Dim szCheck&, szMatch&                                    'v1 (no ref. used)
+    szCheck = LenB(sCheck)
+    szMatch = LenB(sMatch)
+    EndsWith = InStrB(szCheck - szMatch + 1, sCheck, sMatch, szMatch)
+'    EndsWith = InStrLenRevB(sCheck, sMatch, , , LenB(sMatch)) 'v2
 End Function
 'no ref. used
 Function Repeat(Count&, sSrc$) As String
@@ -1126,14 +1092,48 @@ Function StringB(ByVal Num As Long, Char) As String
 '    saRef(0).Count = 0
     saRef(0).pData = 0
 End Function
+
+'>>>>>>>ARRAY FUNCTIONS<<<<<<<<<<
+Private Sub Example_ShellSortS()
+    Dim sAr$()
+    
+    sAr = Split("яблоки Груши аппельсины Кориандр манго")
+    
+    ShellSortS sAr, Descending, vbTextCompare
+End Sub
+'http://www.excelworld.ru/board/vba/tricks/sort_array_shell/9-1-0-32
+Sub ShellSortS(Arr() As String, _
+    Optional ByVal Order As SortOrder = Ascending, Optional ByVal Comp As VbCompareMethod)
+    Dim Limit&, Switch&, i&, j&, ij&, ub&
+    If IsInitialized Then Else Initialize
+    
+    ub = UBound(Arr)
+    j = (ub + 1) \ 2
+    Do While j > 0
+        Limit = ub - j
+        Do
+            Switch = -1
+            For i = 0 To Limit
+                ij = i + j
+                If StrComp(Arr(i), Arr(ij), Comp) = Order Then
+                    SwapPtr VarPtr(Arr(i)), VarPtr(Arr(ij))
+                    Switch = i
+                End If
+            Next
+            Limit = Switch - j
+        Loop While Switch >= 0
+        j = j \ 2
+    Loop
+End Sub
+
+
+'>>>>>>>>>>>TESTS<<<<<<<<<<<<<
 Private Sub Test_StringB()
     Dim s$, s2$
     
     s = StringB(10, vbNullChar)
     s2 = String(10, 0)
 End Sub
-
-'>>>>>>>>>>>TESTS<<<<<<<<<<<<<
 Private Sub Test_InStrLenRevB()
     Dim s1$, s2$, lres1&, lres2&
     s1 = "kdsFddLjklk" '22-10 13
