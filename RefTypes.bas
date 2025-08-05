@@ -24,12 +24,13 @@ Private Enum Context
     ptrSz = 4 + (4 * Win64)
     varSz = 8 + (2 * ptrSz)
 End Enum
-
+Private Const FADF_AUTO      As Integer = &H1
+Private Const FADF_FIXEDSIZE As Integer = &H10
 #If VBA7 = 0 Then
     Private Enum LONG_PTR: [_]: End Enum
      Public Enum LongPtr:  [_]: End Enum '// Must be Public for Enum-typed Public Property
 #End If
-#If Win32 Then
+#If Not Win64 Then
     Public Type LongLong
         L0x0 As Long
         L0x4 As Long
@@ -153,8 +154,6 @@ Private iMapDyn_SA As SA1D, bMapDyn_SA As SA1D
 Public IsInitialized As Boolean, islpRefInit As Boolean
 
 Private Sub MakeRef(Descriptor As SA1D, ByVal ptRef As LongPtr, ByVal cbElem As Long)
-    Const FADF_AUTO      As Integer = &H1
-    Const FADF_FIXEDSIZE As Integer = &H10
     Static This            As Initializer '// Proxy for `Init_Element()`
     Static Init_Element()  As LongPtr     '// Static Init As Vector
     Static Init_Descriptor As SA1D
@@ -1369,7 +1368,7 @@ Private Sub Test_VariantUnion2()
     
     pvArr = VarPtr(pvArr) - ptrSz
     SA = GetSA(GetPtr(pvArr))
-    SA.Features = FADF_FIXEDSIZE_AUTO 'FADF_STATIC Or FADF_FIXEDSIZE
+    SA.Features = FADF_AUTO Or FADF_FIXEDSIZE 'FADF_FIXEDSIZE_AUTO 'FADF_STATIC Or FADF_FIXEDSIZE
     SA.Locks = 1
 '    PutPtr(pvArr - ptrSz) = VarPtr(SA)     'vsArr
     PutPtr(pvArr - ptrSz * 2) = VarPtr(SA)
