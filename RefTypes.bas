@@ -16,6 +16,7 @@
 Option Explicit
 
 #Const SafeMode = True
+'#Const PreInitMode = True
 Private Enum Context
 #If Win64 Then
     [_]   '// 0 on x64; undefined on x86.
@@ -166,7 +167,7 @@ Private Sub MakeRef(Descriptor As SA1D, ByVal ptRef As LongPtr, ByVal cbElem As 
             .Features = FADF_AUTO Or FADF_FIXEDSIZE
             .Dims = 1
             .Locks = 1
-            .cbElem = cbElem
+            .cbElem = ptrSz
         End If
         
         .pData = ptRef
@@ -174,6 +175,7 @@ Private Sub MakeRef(Descriptor As SA1D, ByVal ptRef As LongPtr, ByVal cbElem As 
     End With
     
     Descriptor = Init_Descriptor
+    Descriptor.cbElem = cbElem
     Descriptor.pData = 0
 End Sub
 Private Sub InitInitializer(ByRef Initializer() As LONG_PTR)
@@ -232,78 +234,106 @@ Sub Initialize()
 End Sub
 
 Property Get GetInt(ByVal Target As LongPtr) As Integer
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     iRef_SA.pData = Target
     GetInt = iRef(0)
 End Property
 Property Let PutInt(ByVal Target As LongPtr, ByVal PutInt As Integer)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     iRef_SA.pData = Target
     iRef(0) = PutInt
 End Property
 
 Property Get GetLng(ByVal Target As LongPtr) As Long
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     lRef_SA.pData = Target
     GetLng = lRef(0)
 End Property
 Property Let PutLng(ByVal Target As LongPtr, ByVal PutLng As Long)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     lRef_SA.pData = Target
     lRef(0) = PutLng
 End Property
 
 Property Get GetSng(ByVal Target As LongPtr) As Single
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     snRef_SA.pData = Target
     GetSng = snRef(0)
 End Property
 Property Let PutSng(ByVal Target As LongPtr, ByVal PutSng As Single)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     snRef_SA.pData = Target
     snRef(0) = PutSng
 End Property
 
 Property Get GetDbl(ByVal Target As LongPtr) As Double
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     dRef_SA.pData = Target
     GetDbl = dRef(0)
 End Property
 Property Let PutDbl(ByVal Target As LongPtr, ByVal PutDbl As Double)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     dRef_SA.pData = Target
     dRef(0) = PutDbl
 End Property
 
 Property Get GetCur(ByVal Target As LongPtr) As Currency
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     cRef_SA.pData = Target
     GetCur = cRef(0)
 End Property
 Property Let PutCur(ByVal Target As LongPtr, ByVal PutCur As Currency)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     cRef_SA.pData = Target
     cRef(0) = PutCur
 End Property
 
 Property Get GetDate(ByVal Target As LongPtr) As Date
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     dtRef_SA.pData = Target
     GetDate = dtRef(0)
 End Property
 Property Let PutDate(ByVal Target As LongPtr, ByVal PutDate As Date)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     dtRef_SA.pData = Target
     dtRef(0) = PutDate
 End Property
 
 Property Get GetStr(ByVal Target As LongPtr) As String
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     sRef_SA.pData = Target
     GetStr = sRef(0)
 End Property
 Property Let PutStr(ByVal Target As LongPtr, ByRef PutStr As String)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     sRef_SA.pData = Target
     sRef(0) = PutStr
 End Property
@@ -322,89 +352,119 @@ Function RefStr(SA As SA1D, Optional ByVal pData As LongPtr) As String()
 End Function
 
 Property Get GetObj(ByVal Target As LongPtr) As Object
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     oRef_SA.pData = Target
     Set GetObj = oRef(0)
 End Property
 Property Set SetObj(ByVal Target As LongPtr, ByVal SetObj As Object)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     oRef_SA.pData = Target
     Set oRef(0) = SetObj
 End Property
 
 Property Get GetBool(ByVal Target As LongPtr) As Boolean
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     blRef_SA.pData = Target
     GetBool = blRef(0)
 End Property
 Property Let PutBool(ByVal Target As LongPtr, ByVal PutBool As Boolean)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     blRef_SA.pData = Target
     blRef(0) = PutBool
 End Property
 
 Property Get GetVar(ByVal Target As LongPtr) As Variant
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     vRef_SA.pData = Target
     GetVar = vRef(0)
 End Property
 Property Let PutVar(ByVal Target As LongPtr, ByRef PutVar As Variant)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     vRef_SA.pData = Target
     vRef(0) = PutVar
 End Property
 Property Set SetVar(ByVal Target As LongPtr, ByRef SetVar As Variant)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     vRef_SA.pData = Target
     Set vRef(0) = SetVar
 End Property
 
 Property Get GetUnk(ByVal Target As LongPtr) As IUnknown
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     unkRef_SA.pData = Target
     Set RefUnk = unkRef(0)
 End Property
 Property Set SetUnk(ByVal Target As LongPtr, ByVal RefUnk As IUnknown)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     unkRef_SA.pData = Target
     Set unkRef(0) = RefUnk
 End Property
 
 'Property Get GetDec(ByVal Target As LongPtr) As Variant
-'    If IsInitialized Then Else Initialize
+  #If Not PreInitMode Then
+    If IsInitialized Then Else Initialize
+  #End If
 '    dcRef_SA.pData = Target
 '    RefDec = dcRef(0)
 'End Property
 'Property Let PutDec(ByVal Target As LongPtr, ByVal RefDec As Variant)
-'    If IsInitialized Then Else Initialize
+  #If Not PreInitMode Then
+    If IsInitialized Then Else Initialize
+  #End If
 '    dcRef_SA.pData = Target
 '    dcRef(0) = RefDec
 'End Property '_
 Property Get GetByte(ByVal Target As LongPtr) As Byte
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     bRef_SA.pData = Target
     RefByte = bRef(0)
 End Property
 Property Let PutByte(ByVal Target As LongPtr, ByVal RefByte As Byte)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     bRef_SA.pData = Target
     bRef(0) = RefByte
 End Property
 
-    Property Get GetLngLng(ByVal Target As LongPtr) As LongLong
-        If IsInitialized Then Else Initialize
-        llRef_SA.pData = Target
-        RefLngLng = llRef(0)
-    End Property
-#If Win64 = 0 Then
-    Property Let PutLngLng(ByVal Target As LongPtr, ByRef RefLngLng As LongLong)
-#Else
-    Property Let PutLngLng(ByVal Target As LongPtr, ByVal RefLngLng As LongLong)
-#End If
-        If IsInitialized Then Else Initialize
-        llRef_SA.pData = Target
-        llRef(0) = RefLngLng
-    End Property
+Property Get GetLngLng(ByVal Target As LongPtr) As LongLong
+  #If Not PreInitMode Then
+    If IsInitialized Then Else Initialize
+  #End If
+  llRef_SA.pData = Target
+  RefLngLng = llRef(0)
+End Property
+  #If Win64 = 0 Then
+Property Let PutLngLng(ByVal Target As LongPtr, ByRef RefLngLng As LongLong)
+  #Else
+Property Let PutLngLng(ByVal Target As LongPtr, ByVal RefLngLng As LongLong)
+  #End If
+  #If Not PreInitMode Then
+    If IsInitialized Then Else Initialize
+  #End If
+  llRef_SA.pData = Target
+  llRef(0) = RefLngLng
+End Property
 
 Property Get GetPtr(ByVal Target As LongPtr) As LongPtr
     If islpRefInit Then Else Initialize
@@ -433,12 +493,16 @@ Function RefPtr(SA As SA1D, Optional ByVal Target As LongPtr) As LongPtr()
 End Function
 
 Property Get GetSA(ByVal Target As LongPtr) As SA1D
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     saRef_SA.pData = Target
     GetSA = saRef(0)
 End Property
 Property Let PutSA(ByVal Target As LongPtr, RefSA As SA1D)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     saRef_SA.pData = Target
     saRef(0) = PutSA
 End Property
@@ -450,13 +514,17 @@ Private Sub Test_ArrPtr_()
     Debug.Print ArrPtrB(bAr), ArrPtrI(iAr, True)
 End Sub
 Function ArrPtrB(bAry() As Byte, Optional ByVal GetDesc As Boolean) As LongPtr
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     lpRef2_SA.pData = VarPtr(GetDesc) - ptrSz
     If GetDesc Then lpRef2_SA.pData = lpRef2(0)
     ArrPtrB = lpRef2(0)
 End Function
 Function ArrPtrI(iAry() As Integer, Optional ByVal GetDesc As Boolean) As LongPtr
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     lpRef2_SA.pData = VarPtr(GetDesc) - ptrSz
     If GetDesc Then lpRef2_SA.pData = lpRef2(0)
     ArrPtrI = lpRef2(0)
@@ -464,7 +532,9 @@ End Function
 
 'перемещение указателя (передача владения)
 Sub MovePtr(ByVal pDst As LongPtr, ByVal pSrc As LongPtr)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     lpRef_SA.pData = pDst
     lpRef2_SA.pData = pSrc
     lpRef(0) = lpRef2(0)
@@ -473,7 +543,9 @@ End Sub
 'перемещение указателя строки из Variant в String
 Function VarMoveStr(vStr) As String
     If varType(vStr) = vbString Then
-        If IsInitialized Then Else Initialize
+    #If Not PreInitMode Then
+    If IsInitialized Then Else Initialize
+      #End If
         lpRef_SA.pData = VarPtr(VarMoveStr)
         lpRef2_SA.pData = VarPtr(vStr) + 8
         lpRef(0) = lpRef2(0)
@@ -489,7 +561,9 @@ Private Sub TestMoveStr()
 End Sub
 'безопасное перемещение указателя строки
 Sub MoveStr(sDst$, sSrc$)
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     If StrPtr(sDst) Then sDst = vbNullString
     lpRef_SA.pData = VarPtr(sDst)
     lpRef2_SA.pData = VarPtr(sSrc)
@@ -510,7 +584,9 @@ End Sub
 Sub MemLSet(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal size As Long)
     Dim sDst$, sSrc$, lTmp&
     Dim s1$, s2$
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     
     If size > 3 Then
     Else
@@ -560,7 +636,9 @@ End Sub
 Function VbaMemRealloc(ByVal pMem As LongPtr, ByVal newSize As Long) As LongPtr
     Dim bMap() As Byte, lp As LongPtr
     If newSize < 1 Then Exit Function
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     
     If pMem Then
     Else
@@ -582,7 +660,9 @@ Function VbaMemRealloc(ByVal pMem As LongPtr, ByVal newSize As Long) As LongPtr
 End Function
 Function VbaMemAlloc(ByVal size As LongPtr) As LongPtr
     Dim bMap() As Byte, lp As LongPtr
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     
     ReDim bMap(size - 1)
     lpRef_SA.pData = VarPtr(lp) + ptrSz
@@ -628,7 +708,9 @@ End Function
 Private Function StrCompVBA(str1$, str2$) As Long
     Dim len1&, len2&, lenMin&
     Dim i&, dif&
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     
     len1 = Len(str1) + 1: len2 = Len(str2) + 1
     If len1 > len2 Then lenMin = len2 Else lenMin = len1
@@ -648,7 +730,9 @@ End Function
 Function InStrEnd(sCheck$, sMatch$, Optional ByVal Start As Long = 1, _
     Optional ByVal Compare As VbCompareMethod, Optional ByVal endFind As Long = -1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     
     If Compare = vbBinaryCompare Then
         iMap1_SA.pData = StrPtr(sCheck)
@@ -683,7 +767,9 @@ End Function
 Function InStrEndB(sCheck$, sMatch$, Optional ByVal Start As Long = 1, _
     Optional ByVal Compare As VbCompareMethod, Optional ByVal endFind As Long = -1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, bMatch As Byte
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     
     If Compare = vbBinaryCompare Then
         bMap1_SA.pData = StrPtr(sCheck)
@@ -718,7 +804,9 @@ End Function
 Function InStrEndRev(sCheck$, sMatch$, Optional ByVal Start As Long = -1, _
     Optional ByVal Compare As VbCompareMethod, Optional ByVal endFind As Long = 1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     
     If Compare = vbBinaryCompare Then
         iMap1_SA.pData = StrPtr(sCheck)
@@ -769,7 +857,9 @@ End Function
 Function InStrEndRevB(sCheck$, sMatch$, Optional ByVal Start As Long = -1, _
     Optional ByVal endFind As Long = 1, Optional ByVal Compare As VbCompareMethod) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, bMatch As Byte
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     
     If Compare = vbBinaryCompare Then
         bMap1_SA.pData = StrPtr(sCheck)
@@ -810,10 +900,12 @@ End Function
 Function InStrLen(ByVal Start As Long, sCheck$, sMatch$, ByVal lenFind As Long, _
     Optional ByVal Compare As VbCompareMethod) As Long
     Dim szCheck&, newSize&, pCheck As LongPtr
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
-    
+  #End If
     pCheck = StrPtr(sCheck)
     If pCheck Then Else Exit Function
+    
     lRef_SA.pData = pCheck - 4
     szCheck = lRef(0)
     newSize = (Start + lenFind - 1) * 2
@@ -832,10 +924,13 @@ End Function
 Function InStrLenB(ByVal Start As Long, sCheck$, sMatch$, ByVal lenFind As Long, _
     Optional ByVal Compare As VbCompareMethod) As Long
     Dim szCheck&, newSize&, pCheck As LongPtr
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     
     pCheck = StrPtr(sCheck)
     If pCheck Then Else Exit Function
+    
     lRef_SA.pData = pCheck - 4
     szCheck = lRef(0)
     newSize = Start + lenFind - 1
@@ -852,46 +947,49 @@ errArgum:
     Err.Raise 5, , "invalid function argumenct"
 End Function
 'No safe version without any checks NS = Not Safe
-Function InStrLenNS(ByVal Start As Long, sCheck$, sMatch$, ByVal lenFind As Long, _
-    Optional ByVal Compare As VbCompareMethod, Optional szCheckRef As Long) As Long
+
+Function InStrEndNS(ByVal Start As Long, sCheck$, sMatch$, ByVal endFind As Long, _
+    Optional ByVal Compare As VbCompareMethod) As Long
     Dim lTmp&
-'    If IsInitialized Then Else Initialize
-    lTmp = szCheckRef
-    szCheckRef = (Start + lenFind - 1) * 2
-    InStrLenNS = InStr(Start, sCheck, sMatch, Compare)
-    szCheckRef = lTmp
+  #If Not PreInitMode Then
+    If IsInitialized Then Else Initialize
+  #End If
+    lRef_SA.pData = StrPtr(sCheck) - 4
+    lTmp = lRef(0)
+    
+    lRef(0) = endFind * 2
+    InStrEndNS = InStr(Start, sCheck, sMatch, Compare)
+    lRef(0) = lTmp
+End Function
+Function InStrLenNS(ByVal Start As Long, sCheck$, sMatch$, ByVal lenFind As Long, _
+    Optional ByVal Compare As VbCompareMethod) As Long
+    InStrLenNS = InStrEndNS(Start, sCheck, sMatch, Start + lenFind - 1, Compare)
+End Function
+
+Function InStrEndBNS(ByVal Start As Long, sCheck$, sMatch$, ByVal endFind As Long, _
+    Optional ByVal Compare As VbCompareMethod) As Long
+    Dim lTmp&
+  #If Not PreInitMode Then
+    If IsInitialized Then Else Initialize
+  #End If
+    lRef_SA.pData = StrPtr(sCheck) - 4
+    lTmp = lRef(0)
+    
+    lRef(0) = endFind
+    InStrEndBNS = InStrB(Start, sCheck, sMatch, Compare)
+    lRef(0) = lTmp
 End Function
 Function InStrLenBNS(ByVal Start As Long, sCheck$, sMatch$, ByVal lenFind As Long, _
-    Optional ByVal Compare As VbCompareMethod, Optional szCheckRef As Long) As Long
-    Dim lTmp&
-'    If IsInitialized Then Else Initialize
-    lTmp = szCheckRef
-    szCheckRef = Start + lenFind - 1
-    InStrLenBNS = InStrB(Start, sCheck, sMatch, Compare)
-    szCheckRef = lTmp
+    Optional ByVal Compare As VbCompareMethod) As Long
+    InStrLenBNS = InStrEndBNS(Start, sCheck, sMatch, Start + lenFind - 1, Compare)
 End Function
-Function InStrEndNS(ByVal Start As Long, sCheck$, sMatch$, ByVal endFind As Long, _
-    Optional ByVal Compare As VbCompareMethod, Optional szCheckRef As Long) As Long
-    Dim lTmp&
-'    If IsInitialized Then Else Initialize
-    lTmp = szCheckRef
-    szCheckRef = endFind * 2
-    InStrEndNS = InStr(Start, sCheck, sMatch, Compare)
-    szCheckRef = lTmp
-End Function
-Function InStrEndBNS(ByVal Start As Long, sCheck$, sMatch$, ByVal endFind As Long, _
-    Optional ByVal Compare As VbCompareMethod, Optional szCheckRef As Long) As Long
-    Dim lTmp&
-'    If IsInitialized Then Else Initialize
-    lTmp = szCheckRef
-    szCheckRef = endFind
-    InStrEndBNS = InStrB(Start, sCheck, sMatch, Compare)
-    szCheckRef = lTmp
-End Function
+
 Function InStrEndRevNS(sCheck$, sMatch$, ByVal Start As Long, _
-    Optional ByVal Compare As VbCompareMethod, Optional ByVal endFind As Long = 1) As Long
-    Dim sTmp$, pTmp As LongPtr, lTmp&
-'    If IsInitialized Then Else Initialize
+    Optional ByVal endFind As Long = 1, Optional ByVal Compare As VbCompareMethod) As Long
+    Dim sTmp$, pTmp As LongPtr, lTmp&, lRet&
+  #If Not PreInitMode Then
+    If IsInitialized Then Else Initialize
+  #End If
     
     endFind = endFind - 1
     pTmp = StrPtr(sCheck) + endFind * 2
@@ -901,28 +999,16 @@ Function InStrEndRevNS(sCheck$, sMatch$, ByVal Start As Long, _
     lpRef_SA.pData = VarPtr(sTmp)
     lpRef(0) = pTmp
     
-    InStrEndRevNS = InStrRev(sTmp, sMatch, , Compare) + endFind
+    lRet = InStrRev(sTmp, sMatch, , Compare)
+    If lRet Then InStrEndRevNS = lRet + endFind
     
     lpRef(0) = 0
     lRef(0) = lTmp
 End Function
 Function InStrLenRevNS(sCheck$, sMatch$, ByVal Start As Long, _
-    Optional ByVal Compare As VbCompareMethod, Optional ByVal lenFind As Long = -1) As Long
-    Dim sTmp$, pTmp As LongPtr, lTmp&, lOff&
-'    If IsInitialized Then Else Initialize
-    
-    lOff = Start - lenFind
-    pTmp = StrPtr(sCheck) + lOff * 2
-    lRef_SA.pData = pTmp - 4
-    lTmp = lRef(0)
-    lRef(0) = lenFind * 2
-    lpRef_SA.pData = VarPtr(sTmp)
-    lpRef(0) = pTmp
-    
-    InStrLenRevNS = InStrRev(sTmp, sMatch, lenFind, Compare) + lOff
-    
-    lpRef(0) = 0
-    lRef(0) = lTmp
+    Optional ByVal lenFind As Long = -1, Optional ByVal Compare As VbCompareMethod) As Long
+    Dim endFind&: endFind = Start - lenFind + 1
+    InStrLenRevNS = InStrEndRevNS(sCheck, sMatch, Start, endFind, Compare)
 End Function
 Private Sub Test_InStrLen()
     Dim s1$, s2$
@@ -937,8 +1023,8 @@ Private Sub Test_InStrLen()
 '    l3 = InStrLenNS(8, s1, s2, 4, , lRef(0))
 '    l4 = InStrLenBNS(15, s1, s2, 8, , lRef(0))
     l1 = InStrRev(s1, s2, 11)
-'    l2 = InStrEndRevNS(s1, s2, 7, , 4)
-    l3 = InStrLenRevNS(s1, s2, 7, , 4)
+    l2 = InStrEndRevNS(s1, s2, 7, 4)
+    l3 = InStrLenRevNS(s1, s2, 7, 4)
 End Sub
 Sub TestProxyRef(Optional l&, Optional ByVal l0&)
     Dim s$
@@ -960,7 +1046,9 @@ End Sub
 Sub ReallocString(sSrc$, ByVal newSize&)
     Dim iMap%(), pSrc As LongPtr
     If newSize < 0 Then Exit Sub
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
         
     pSrc = StrPtr(sSrc)
     If pSrc Then
@@ -986,7 +1074,9 @@ End Sub
 Sub ReallocStringB(sSrc$, ByVal newSize&)
     Dim bMap() As Byte, pSrc As LongPtr
     If newSize < 0 Then Exit Sub
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
         
     pSrc = StrPtr(sSrc)
     If pSrc Then
@@ -1012,7 +1102,9 @@ Sub ReallocStringB(sSrc$, ByVal newSize&)
 End Sub
 'аналог SysAllocStringLen Функции копирующей заданный буфер в новую bstr-строку
 Function VbaMemAllocStringLen(ByVal pStr As LongPtr, ByVal strlen As Long) As String
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     
     bMap1_SA.pData = pStr
     bMap1_SA.Count = strlen * 2
@@ -1021,7 +1113,9 @@ Function VbaMemAllocStringLen(ByVal pStr As LongPtr, ByVal strlen As Long) As St
 End Function
 'аналог SysAllocStringByteLen
 Function VbaMemAllocStringByteLen(ByVal pStr As LongPtr, ByVal strBytelen As Long) As String
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     
     bMap2_SA.pData = pStr
     bMap2_SA.Count = strBytelen
@@ -1029,7 +1123,9 @@ Function VbaMemAllocStringByteLen(ByVal pStr As LongPtr, ByVal strBytelen As Lon
     VbaMemAllocStringByteLen = bMap2()
 End Function
 Function StartsWith(sCheck$, sMatch$) As Boolean
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     Dim lTmp&, szMatch&
     lRef_SA.pData = StrPtr(sCheck) - 4
     lTmp = lRef(0)
@@ -1044,11 +1140,11 @@ Function EndsWith(sCheck$, sMatch$) As Boolean
     Dim szCheck&, szMatch&                                    'v1 (no ref. used)
     szCheck = LenB(sCheck)
     szMatch = LenB(sMatch)
-    EndsWith = InStrB(szCheck - szMatch + 1, sCheck, sMatch, szMatch)
+    EndsWith = InStrB(szCheck - szMatch + 1, sCheck, sMatch)
 '    EndsWith = InStrLenRevB(sCheck, sMatch, , , LenB(sMatch)) 'v2
 End Function
 'no ref. used
-Function Repeat(Count&, sSrc$) As String
+Function Repeat(ByVal Count&, sSrc$) As String
 '    Dim lnSrc&, lnRes&, i&                     'v1
 '    lnSrc = Len(sSrc)
 '    lnRes = lnSrc * Count
@@ -1057,7 +1153,9 @@ Function Repeat(Count&, sSrc$) As String
 '        Mid$(Repeat, i, lnSrc) = sSrc
 '    Next
     Dim pDst As LongPtr, pSrc As LongPtr, szSrc& 'v2
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     pSrc = StrPtr(sSrc)
     szSrc = LenB(sSrc)
     Repeat = String((szSrc \ 2) * Count, vbNullChar)
@@ -1068,7 +1166,9 @@ Function Repeat(Count&, sSrc$) As String
 End Function
 Function StringB(ByVal Num As Long, Char) As String
     Dim bChar As Byte, i&, bBuf() As Byte
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     If varType(Char) = vbString Then
         bChar = Asc(Char)
     ElseIf IsNumeric(Char) Then
@@ -1091,7 +1191,73 @@ Function StringB(ByVal Num As Long, Char) As String
 '    saRef(0).Count = 0
     saRef(0).pData = 0
 End Function
-
+Private Sub Test_Strip()
+    Dim s$
+    s = "  #*Hello World!..-  "
+    Strip s ', " #*-"
+End Sub
+Function Strip(sSource$, Optional sChars$) As String
+    Static init As Boolean, stSet As New Dictionary, Beds As New Dictionary
+    Dim i&, lOff&, rOff&, Desc2 As SA1D, iChars%(), Desc1 As SA1D, iSource%()
+    Dim lnSrc&, cChars&
+    If init Then
+    Else
+        stSet.Add 9, Empty 'vbTab
+        stSet.Add 10, Empty 'vbLf
+        stSet.Add 11, Empty '\v
+        stSet.Add 12, Empty 'vbFormFeed
+        stSet.Add 13, Empty 'vbCr/vbNewLine
+        stSet.Add 32, Empty '" "
+        init = True
+    End If
+    lnSrc = Len(sSource)
+    If lnSrc Then Else Exit Function
+    
+    iSource = GetStrMap(Desc1, sSource)
+    iChars = GetStrMap(Desc2, sChars)
+    cChars = Len(sChars)
+    If cChars Then
+        For i = 1 To cChars
+            Beds(iChars(i)) = Empty
+        Next
+    Else
+        Set Beds = stSet
+    End If
+    
+    For i = 1 To lnSrc
+        If Beds.Exists(iSource(i)) Then
+            lOff = lOff + 1
+        Else: Exit For
+        End If
+    Next
+    For i = lnSrc To lOff + 1 Step -1
+        If Beds.Exists(iSource(i)) Then
+            rOff = rOff + 1
+        Else: Exit For
+        End If
+    Next
+    If cChars Then Beds.RemoveAll
+    
+    Dim pSrc As LongPtr, pTmp As LongPtr, szNew
+    If lOff Then
+        pSrc = StrPtr(sSource)
+        pTmp = pSrc + 2 * lOff
+        szNew = (lnSrc - lOff) * 2
+       
+        lRef_SA.pData = pTmp - 4
+        lRef(0) = szNew
+        lRef2_SA.pData = pSrc - 4
+        lRef2(0) = szNew
+        sRef_SA.pData = VarPtr(pTmp)
+        LSet sSource = sRef(0)
+'        sRef_SA.pData = 0
+        lRef2(0) = lnSrc * 2
+    End If
+    If lOff > 0 Or rOff > 0 Then
+        ReallocString sSource, lnSrc - lOff - rOff
+    End If
+    
+End Function
 '>>>>>>>ARRAY FUNCTIONS<<<<<<<<<<
 Private Sub Example_ShellSortS()
     Dim sAr$()
@@ -1104,7 +1270,9 @@ End Sub
 Sub ShellSortS(Arr() As String, _
     Optional ByVal Order As SortOrder = Ascending, Optional ByVal Comp As VbCompareMethod)
     Dim Limit&, Switch&, i&, j&, ij&, ub&
+  #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
+  #End If
     
     ub = UBound(Arr)
     j = (ub + 1) \ 2
@@ -1401,3 +1569,23 @@ Private Sub Test_RefStr()
 '    Erase ref
     Debug.Print ref(0)
 End Sub
+'Function InStrLenRevNS(sCheck$, sMatch$, ByVal Start As Long, _
+'    Optional ByVal Compare As VbCompareMethod, Optional ByVal lenFind As Long = -1) As Long
+'    Dim sTmp$, pTmp As LongPtr, lTmp&, lOff&, lRet&
+'  #If Not PreInitMode Then
+'    If IsInitialized Then Else Initialize
+'  #End If
+'
+'    lOff = Start - lenFind
+'    pTmp = StrPtr(sCheck) + lOff * 2
+'    lRef_SA.pData = pTmp - 4
+'    lTmp = lRef(0)
+'    lRef(0) = lenFind * 2
+'    lpRef_SA.pData = VarPtr(sTmp)
+'    lpRef(0) = pTmp
+'
+'    lRet = InStrRev(sTmp, sMatch, lenFind, Compare)
+'    if lRet then InStrLenRevNS = lRet + lOff
+'    lpRef(0) = 0
+'    lRef(0) = lTmp
+'End Function
