@@ -1232,26 +1232,73 @@ Function Strip(sSource$, Optional sTrimChars$) As String
     Next
     If cTrimChars Then curTrimDict.RemoveAll
     
-    Dim pSrc As LongPtr, pTmp As LongPtr, szNew&
-    If lOff Then
-        pSrc = StrPtr(sSource)
-        pTmp = pSrc + 2 * lOff
-        szNew = (lnSrc - lOff) * 2
-       
-        lRef_SA.pData = pTmp - 4
-        lRef(0) = szNew
-        lRef2_SA.pData = pSrc - 4
-        lRef2(0) = szNew
-        sRef_SA.pData = VarPtr(pTmp)
-        LSet sSource = sRef(0)
-'        sRef_SA.pData = 0
-        lRef2(0) = lnSrc * 2
-    End If
-    If lOff > 0 Or rOff > 0 Then
-        ReallocString sSource, lnSrc - lOff - rOff
-    End If
+    Strip = Mid$(sSource, 1 + lOff, lnSrc - lOff - rOff)
+    ''for StripBuf()
+'    Dim pSrc As LongPtr, pTmp As LongPtr, szNew&
+'    If lOff Then
+'        pSrc = StrPtr(sSource)
+'        pTmp = pSrc + 2 * lOff
+'        szNew = (lnSrc - lOff) * 2
+'
+'        lRef_SA.pData = pTmp - 4
+'        lRef(0) = szNew
+'        lRef2_SA.pData = pSrc - 4
+'        lRef2(0) = szNew
+'        sRef_SA.pData = VarPtr(pTmp)
+'        LSet sSource = sRef(0)
+''        sRef_SA.pData = 0
+'        lRef2(0) = lnSrc * 2
+'    End If
+'    If lOff > 0 Or rOff > 0 Then
+'        ReallocString sSource, lnSrc - lOff - rOff
+'    End If
 End Function
-
+Private Sub afdfda()
+    Dim s1$, s2$
+    
+    s1 = "sdkjirpoiw"
+    s2 = "1122"
+    
+    InsertBuf s1, 5, s2
+    
+    Debug.Print s1        'sdkj1122irpoiw
+End Sub
+Sub InsertBuf(sSrc$, ByVal pos&, sIns$)
+    Dim lnSrc&, lnIns&, lnRes&, szTmp&, szIns&, lTmp1&, lTmp2&
+    Dim pSrc As LongPtr, pTmp1 As LongPtr, pTmp2 As LongPtr
+    lnSrc = Len(sSrc)
+    lnIns = Len(sIns)
+    If lnSrc > 0 And lnIns > 0 Then Else Exit Sub
+    
+    lnRes = lnSrc + lnIns
+    If pos > 0 Then
+        ReallocString sSrc, lnRes
+        pSrc = StrPtr(sSrc)
+        pTmp1 = pSrc + (pos - 1) * 2
+        szIns = lnIns * 2
+        pTmp2 = pTmp1 + szIns
+        szTmp = (lnSrc - pos + 1) * 2
+        lRef_SA.pData = pTmp1 - 4
+        lTmp1 = lRef(0)
+        lRef(0) = szTmp
+        lRef2_SA.pData = pTmp2 - 4
+        lTmp2 = lRef2(0)
+        lRef2(0) = szTmp
+        sRef_SA.pData = VarPtr(pTmp1)
+        sRef2_SA.pData = VarPtr(pTmp2)
+        LSet sRef2(0) = sRef(0)
+        
+        lRef2_SA.pData = lRef2_SA.pData + szIns
+        lRef2(0) = lTmp2
+        
+        lRef(0) = szIns
+        LSet sRef(0) = sIns
+        lRef(0) = lTmp1
+        
+    ElseIf pos < 0 Then
+        
+    End If
+End Sub
 
 '>>>>>>>ARRAY FUNCTIONS<<<<<<<<<<
 Private Sub Example_ShellSortS()
@@ -1291,9 +1338,9 @@ End Sub
 
 '>>>>>>>>>>>TESTS<<<<<<<<<<<<<
 Private Sub Test_Strip()
-    Dim s$
+    Dim s$, s2$
     s = "  #*Hello World!..-  "
-    Strip s, " #*-"
+    s2 = Strip(s, " #*-")
 End Sub
 Private Sub Test_StringB()
     Dim s$, s2$
@@ -1589,4 +1636,3 @@ End Sub
 '    lpRef(0) = 0
 '    lRef(0) = lTmp
 'End Function
-
