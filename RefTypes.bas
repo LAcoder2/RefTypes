@@ -1061,13 +1061,11 @@ Sub ReallocString(sSrc$, ByVal newSize&)
         
     lpRef_SA.pData = VarPtr(pSrc) + ptrSz
     lpRef(0) = VarPtr(iMapDyn_SA)
-    
     ReDim Preserve iMap(newSize + 2)
     lpRef(0) = 0
     
     lpRef2_SA.pData = VarPtr(sSrc)
     lpRef2(0) = iMapDyn_SA.pData + 4
-    
     lRef_SA.pData = iMapDyn_SA.pData
     lRef(0) = newSize * 2
 End Sub
@@ -1191,52 +1189,48 @@ Function StringB(ByVal Num As Long, Char) As String
 '    saRef(0).Count = 0
     saRef(0).pData = 0
 End Function
-Private Sub Test_Strip()
-    Dim s$
-    s = "  #*Hello World!..-  "
-    Strip s ', " #*-"
-End Sub
-Function Strip(sSource$, Optional sChars$) As String
-    Static init As Boolean, stSet As New Dictionary, Beds As New Dictionary
-    Dim i&, lOff&, rOff&, Desc2 As SA1D, iChars%(), Desc1 As SA1D, iSource%()
-    Dim lnSrc&, cChars&
+Function Strip(sSource$, Optional sTrimChars$) As String
+    Static init As Boolean, dfltTrimDict As New Dictionary, curTrimDict As New Dictionary
+    Dim i&, lOff&, rOff&, Desc2 As SA1D, iTrimChars%(), Desc1 As SA1D, iSource%()
+    Dim lnSrc&, cTrimChars&, TrimDict As Dictionary
     If init Then
     Else
-        stSet.Add 9, Empty 'vbTab
-        stSet.Add 10, Empty 'vbLf
-        stSet.Add 11, Empty '\v
-        stSet.Add 12, Empty 'vbFormFeed
-        stSet.Add 13, Empty 'vbCr/vbNewLine
-        stSet.Add 32, Empty '" "
+        dfltTrimDict.Add 9, Empty 'vbTab
+        dfltTrimDict.Add 10, Empty 'vbLf
+        dfltTrimDict.Add 11, Empty '\v
+        dfltTrimDict.Add 12, Empty 'vbFormFeed
+        dfltTrimDict.Add 13, Empty 'vbCr/vbNewLine
+        dfltTrimDict.Add 32, Empty '" "
         init = True
     End If
     lnSrc = Len(sSource)
     If lnSrc Then Else Exit Function
     
     iSource = GetStrMap(Desc1, sSource)
-    iChars = GetStrMap(Desc2, sChars)
-    cChars = Len(sChars)
-    If cChars Then
-        For i = 1 To cChars
-            Beds(iChars(i)) = Empty
+    cTrimChars = Len(sTrimChars)
+    If cTrimChars Then
+        iTrimChars = GetStrMap(Desc2, sTrimChars)
+        For i = 1 To cTrimChars
+            curTrimDict(iTrimChars(i)) = Empty
         Next
+        Set TrimDict = curTrimDict
     Else
-        Set Beds = stSet
+        Set TrimDict = dfltTrimDict
     End If
     
     For i = 1 To lnSrc
-        If Beds.Exists(iSource(i)) Then
+        If TrimDict.Exists(iSource(i)) Then
             lOff = lOff + 1
         Else: Exit For
         End If
     Next
     For i = lnSrc To lOff + 1 Step -1
-        If Beds.Exists(iSource(i)) Then
+        If TrimDict.Exists(iSource(i)) Then
             rOff = rOff + 1
         Else: Exit For
         End If
     Next
-    If cChars Then Beds.RemoveAll
+    If cTrimChars Then curTrimDict.RemoveAll
     
     Dim pSrc As LongPtr, pTmp As LongPtr, szNew
     If lOff Then
@@ -1256,8 +1250,9 @@ Function Strip(sSource$, Optional sChars$) As String
     If lOff > 0 Or rOff > 0 Then
         ReallocString sSource, lnSrc - lOff - rOff
     End If
-    
 End Function
+
+
 '>>>>>>>ARRAY FUNCTIONS<<<<<<<<<<
 Private Sub Example_ShellSortS()
     Dim sAr$()
@@ -1295,6 +1290,11 @@ End Sub
 
 
 '>>>>>>>>>>>TESTS<<<<<<<<<<<<<
+Private Sub Test_Strip()
+    Dim s$
+    s = "  #*Hello World!..-  "
+    Strip s, " #*-"
+End Sub
 Private Sub Test_StringB()
     Dim s$, s2$
     
