@@ -1232,7 +1232,7 @@ Function Strip(sSource$, Optional sTrimChars$) As String
     Next
     If cTrimChars Then curTrimDict.RemoveAll
     
-    Dim pSrc As LongPtr, pTmp As LongPtr, szNew
+    Dim pSrc As LongPtr, pTmp As LongPtr, szNew&
     If lOff Then
         pSrc = StrPtr(sSource)
         pTmp = pSrc + 2 * lOff
@@ -1589,3 +1589,4 @@ End Sub
 '    lpRef(0) = 0
 '    lRef(0) = lTmp
 'End Function
+
