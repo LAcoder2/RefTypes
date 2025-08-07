@@ -1253,51 +1253,100 @@ Function Strip(sSource$, Optional sTrimChars$) As String
 '        ReallocString sSource, lnSrc - lOff - rOff
 '    End If
 End Function
-Private Sub afdfda()
-    Dim s1$, s2$
-    
+Private Sub Test_InsertBuf()
+    Dim s1$, s2$, s3$
+    Initialize
     s1 = "sdkjirpoiw"
     s2 = "1122"
     
-    InsertBuf s1, 5, s2
-    
-    Debug.Print s1        'sdkj1122irpoiw
+'    InsertBuf s1, 11, s2
+    s3 = Insert(s1, 12, s2)
+    Debug.Print s3 's1       'sdkj1122irpoiw
 End Sub
+Function Insert(sSrc$, ByVal pos&, sIns$) As String
+    Dim lnSrc&, lnIns&, lnRes&, szTmp&, lTmp&
+    Dim sRes$, pSrc As LongPtr, pTmp1 As LongPtr, pTmp2 As LongPtr
+    
+    lnSrc = Len(sSrc): lnIns = Len(sIns)
+    If lnSrc > 0 And lnIns > 0 Then Else Exit Function
+    If pos < 0 Then
+        pos = lnSrc + pos + 1
+    End If
+    Select Case pos
+    Case 1 To lnSrc + 1
+    Case Else: Exit Function
+    End Select
+    
+    lnRes = lnSrc + lnIns
+    pSrc = StrPtr(sSrc)
+    sRes = String(lnRes, vbNullChar)
+    pTmp1 = StrPtr(sRes)
+    szTmp = (pos - 1) * 2
+    If szTmp Then
+        lRef_SA.pData = pSrc - 4:
+        lRef2_SA.pData = pTmp1 - 4
+        
+        lRef(0) = szTmp: lRef2(0) = szTmp
+        LSet sRes = sSrc
+        lRef(0) = lnSrc * 2: lRef2(0) = lnRes * 2
+    End If
+    pTmp2 = pSrc + szTmp
+    
+    pTmp1 = pTmp1 + szTmp
+    szTmp = lnIns * 2
+    lRef_SA.pData = pTmp1 - 4
+    lTmp = lRef(0)
+    lRef(0) = szTmp
+    sRef_SA.pData = VarPtr(pTmp1)
+    LSet sRef(0) = sIns
+'    sRef_SA.pData = 0
+    lRef(0) = lTmp
+    
+    If pos <= lnSrc Then
+        pTmp1 = pTmp1 + szTmp
+        szTmp = (lnSrc - pos + 1) * 2
+        MemLSet pTmp1, pTmp2, szTmp
+    End If
+    
+    MovePtr VarPtr(Insert), VarPtr(sRes)
+End Function
 Sub InsertBuf(sSrc$, ByVal pos&, sIns$)
     Dim lnSrc&, lnIns&, lnRes&, szTmp&, szIns&, lTmp1&, lTmp2&
     Dim pSrc As LongPtr, pTmp1 As LongPtr, pTmp2 As LongPtr
-    lnSrc = Len(sSrc)
-    lnIns = Len(sIns)
+    
+    lnSrc = Len(sSrc): lnIns = Len(sIns)
     If lnSrc > 0 And lnIns > 0 Then Else Exit Sub
+    If pos < 0 Then
+        pos = lnSrc + pos + 1
+    End If
+    Select Case pos
+    Case 1 To lnSrc + 1
+    Case Else: Exit Function
+    End Select
     
     lnRes = lnSrc + lnIns
-    If pos > 0 Then
-        ReallocString sSrc, lnRes
-        pSrc = StrPtr(sSrc)
-        pTmp1 = pSrc + (pos - 1) * 2
-        szIns = lnIns * 2
-        pTmp2 = pTmp1 + szIns
-        szTmp = (lnSrc - pos + 1) * 2
-        lRef_SA.pData = pTmp1 - 4
-        lTmp1 = lRef(0)
-        lRef(0) = szTmp
-        lRef2_SA.pData = pTmp2 - 4
-        lTmp2 = lRef2(0)
-        lRef2(0) = szTmp
-        sRef_SA.pData = VarPtr(pTmp1)
-        sRef2_SA.pData = VarPtr(pTmp2)
-        LSet sRef2(0) = sRef(0)
-        
-        lRef2_SA.pData = lRef2_SA.pData + szIns
-        lRef2(0) = lTmp2
-        
-        lRef(0) = szIns
-        LSet sRef(0) = sIns
-        lRef(0) = lTmp1
-        
-    ElseIf pos < 0 Then
-        
-    End If
+    ReallocString sSrc, lnRes
+    pSrc = StrPtr(sSrc)
+    pTmp1 = pSrc + (pos - 1) * 2
+    szIns = lnIns * 2
+    pTmp2 = pTmp1 + szIns
+    szTmp = (lnSrc - pos + 1) * 2
+    lRef_SA.pData = pTmp1 - 4
+    lTmp1 = lRef(0)
+    lRef(0) = szTmp
+    lRef2_SA.pData = pTmp2 - 4
+    lTmp2 = lRef2(0)
+    lRef2(0) = szTmp
+    sRef_SA.pData = VarPtr(pTmp1)
+    sRef2_SA.pData = VarPtr(pTmp2)
+    LSet sRef2(0) = sRef(0)
+    
+    lRef2_SA.pData = lRef2_SA.pData + szIns
+    lRef2(0) = lTmp2
+    
+    lRef(0) = szIns
+    LSet sRef(0) = sIns
+    lRef(0) = lTmp1
 End Sub
 
 '>>>>>>>ARRAY FUNCTIONS<<<<<<<<<<
