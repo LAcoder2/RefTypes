@@ -892,9 +892,9 @@ skip:
     Next
 End Function
 Function InStrLenRevB(sCheck$, sMatch$, Optional ByVal Start As Long = -1, _
-    Optional ByVal Length As Long = 1, Optional ByVal Compare As VbCompareMethod) As Long
+    Optional ByVal length As Long = 1, Optional ByVal Compare As VbCompareMethod) As Long
     If Start = -1 Then Start = LenB(sCheck)
-    InStrLenRevB = InStrEndRevB(sCheck, sMatch, Start, Start - Length + 1, Compare)
+    InStrLenRevB = InStrEndRevB(sCheck, sMatch, Start, Start - length + 1, Compare)
 End Function
 
 Function InStrLen(ByVal Start As Long, sCheck$, sMatch$, ByVal lenFind As Long, _
@@ -1349,6 +1349,102 @@ Sub InsertBuf(sSrc$, ByVal pos&, sIns$)
     lRef(0) = lTmp1
 End Sub
 
+Function padStart(sSrc$, ByVal length&, Optional Char) As String
+    Dim iMap%(), pSrc As LongPtr, pDst As LongPtr, lnSrc&, lOff&, lTmp&
+    Dim i&, iChar%, pDat As LongPtr
+    
+    lnSrc = Len(sSrc)
+    If length > lnSrc Then Else Exit Function
+    If varType(Char) = vbString Then
+        iChar = AscW(Char)
+    ElseIf IsNumeric(Char) Then
+        iChar = Char
+    Else: iChar = 32
+    End If
+
+    pDat = StrPtr(sSrc) - 4
+    iMapDyn_SA.pData = pDat
+    iMapDyn_SA.Count = lnSrc + 3
+    lpRef_SA.pData = VarPtr(pSrc) + ptrSz
+    lpRef(0) = VarPtr(iMapDyn_SA)
+      ReDim Preserve iMap(length + 2)
+      
+      pSrc = iMapDyn_SA.pData + 4
+      If pDat <> iMapDyn_SA.pData Then
+          lpRef2_SA.pData = VarPtr(sSrc)
+          lpRef2(0) = pSrc
+      End If
+      lRef_SA.pData = iMapDyn_SA.pData
+      lRef(0) = length * 2
+      
+      lOff = length - lnSrc
+      pDst = pSrc + (lOff) * 2
+      
+      lRef_SA.pData = pDst - 4
+      lTmp = lRef(0)
+      lRef(0) = lnSrc * 2
+      sRef_SA.pData = VarPtr(pDst)
+      
+      LSet sRef(0) = sSrc
+      
+      lRef_SA.pData = pDst + (lOff) * 2 - 4
+      lRef(0) = lTmp
+      
+      For i = 2 To lOff + 1
+          iMap(i) = iChar
+      Next
+    lpRef(0) = 0
+End Function
+Function padEnd(sSrc$, ByVal length&, Optional Char) As String
+    Dim iMap%(), lnSrc&
+    Dim i&, iChar%
+    
+    lnSrc = Len(sSrc)
+    If length > lnSrc Then Else Exit Function
+    If varType(Char) = vbString Then
+        iChar = AscW(Char)
+    ElseIf IsNumeric(Char) Then
+        iChar = Char
+    Else: iChar = 32
+    End If
+    
+    padEnd = String(length, Char)
+    Mid$(padEnd, 1, lnSrc) = sSrc
+End Function
+Sub padEndBuf(sSrc$, ByVal length&, Optional Char)
+    Dim iMap%(), pSrc As LongPtr, lnSrc&
+    Dim i&, iChar%, pDat As LongPtr
+    
+    lnSrc = Len(sSrc)
+    If length > lnSrc Then Else Exit Sub
+    If varType(Char) = vbString Then
+        iChar = AscW(Char)
+    ElseIf IsNumeric(Char) Then
+        iChar = Char
+    Else: iChar = 32
+    End If
+    
+    pDat = StrPtr(sSrc) - 4
+    iMapDyn_SA.pData = pDat
+    iMapDyn_SA.Count = lnSrc + 3
+    lpRef_SA.pData = VarPtr(pSrc) + ptrSz
+    lpRef(0) = VarPtr(iMapDyn_SA)
+      ReDim Preserve iMap(length + 2)
+      
+      pSrc = iMapDyn_SA.pData + 4
+      If pDat <> iMapDyn_SA.pData Then
+          lpRef2_SA.pData = VarPtr(sSrc)
+          lpRef2(0) = pSrc
+      End If
+      lRef_SA.pData = iMapDyn_SA.pData
+      lRef(0) = length * 2
+      
+      For i = lnSrc + 2 To length + 1
+          iMap(i) = iChar
+      Next
+    lpRef(0) = 0
+End Sub
+
 '>>>>>>>ARRAY FUNCTIONS<<<<<<<<<<
 Private Sub Example_ShellSortS()
     Dim sAr$()
@@ -1384,8 +1480,14 @@ Sub ShellSortS(Arr() As String, _
     Loop
 End Sub
 
-
 '>>>>>>>>>>>TESTS<<<<<<<<<<<<<
+Private Sub Test_padStart()
+    Dim s1$, s2$
+    Initialize
+    s1 = "12345"
+'    s2 = padStart(s1, 10, 46)
+    s2 = padEnd(s1, 8, "0")
+End Sub
 Private Sub Test_Strip()
     Dim s$, s2$
     s = "  #*Hello World!..-  "
