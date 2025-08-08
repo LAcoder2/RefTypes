@@ -543,8 +543,8 @@ End Sub
 'перемещение указателя строки из Variant в String
 Function VarMoveStr(vStr) As String
     If varType(vStr) = vbString Then
-    #If Not PreInitMode Then
-    If IsInitialized Then Else Initialize
+      #If Not PreInitMode Then
+        If IsInitialized Then Else Initialize
       #End If
         lpRef_SA.pData = VarPtr(VarMoveStr)
         lpRef2_SA.pData = VarPtr(vStr) + 8
@@ -1146,9 +1146,9 @@ Function Repeat(ByVal Count&, sSrc$) As String
 '    Dim lnSrc&, lnRes&, i&                     'v1
 '    lnSrc = Len(sSrc)
 '    lnRes = lnSrc * Count
-'    Repeat = String(lnRes, vbNullChar)
+'    Repeat = VarMoveStr(String(lnRes, vbNullChar))
 '    For i = 1 To lnRes - lnSrc + 1 Step lnSrc
-'        Mid$(Repeat, i, lnSrc) = sSrc
+'        Mid$(Repeat, i, (lnSrc)) = sSrc
 '    Next
     Dim pDst As LongPtr, pSrc As LongPtr, szSrc& 'v2
   #If Not PreInitMode Then
@@ -1156,7 +1156,7 @@ Function Repeat(ByVal Count&, sSrc$) As String
   #End If
     pSrc = StrPtr(sSrc)
     szSrc = LenB(sSrc)
-    Repeat = String((szSrc \ 2) * Count, vbNullChar)
+    Repeat = VarMoveStr(String((szSrc \ 2) * Count, vbNullChar))
     pDst = StrPtr(Repeat)
     For pDst = pDst To pDst + szSrc * (Count - 1) Step szSrc
         MemLSet pDst, pSrc, szSrc
@@ -1279,7 +1279,7 @@ Function Insert(sSrc$, ByVal pos&, sIns$) As String
     
     lnRes = lnSrc + lnIns
     pSrc = StrPtr(sSrc)
-    sRes = String(lnRes, vbNullChar)
+    sRes = VarMoveStr(String(lnRes, vbNullChar))
     pTmp1 = StrPtr(sRes)
     szTmp = (pos - 1) * 2
     If szTmp Then
@@ -1348,7 +1348,23 @@ Sub InsertBuf(sSrc$, ByVal pos&, sIns$)
     LSet sRef(0) = sIns
     lRef(0) = lTmp1
 End Sub
-
+Function padCenter(sSrc$, ByVal length&, Optional Char) As String
+    Dim iMap%(), pSrc As LongPtr, pDst As LongPtr, lnSrc&, lOff&, lTmp&
+    Dim i&, iChar%, pDat As LongPtr
+    
+    lnSrc = Len(sSrc)
+    If length > lnSrc Then Else Exit Function
+    If varType(Char) = vbString Then
+        iChar = AscW(Char)
+    ElseIf IsNumeric(Char) Then
+        iChar = Char
+    Else: iChar = 32
+    End If
+    
+    lOff = (length - lnSrc) / 2 + 1
+    padCenter = VarMoveStr(String(length, iChar))
+    Mid$(padCenter, lOff, (lnSrc)) = sSrc
+End Function
 Function padStart(sSrc$, ByVal length&, Optional Char) As String
     Dim iMap%(), pSrc As LongPtr, pDst As LongPtr, lnSrc&, lOff&, lTmp&
     Dim i&, iChar%, pDat As LongPtr
@@ -1397,19 +1413,13 @@ Function padStart(sSrc$, ByVal length&, Optional Char) As String
 End Function
 Function padEnd(sSrc$, ByVal length&, Optional Char) As String
     Dim iMap%(), lnSrc&
-    Dim i&, iChar%
+    Dim i&
     
     lnSrc = Len(sSrc)
     If length > lnSrc Then Else Exit Function
-    If varType(Char) = vbString Then
-        iChar = AscW(Char)
-    ElseIf IsNumeric(Char) Then
-        iChar = Char
-    Else: iChar = 32
-    End If
     
-    padEnd = String(length, Char)
-    Mid$(padEnd, 1, lnSrc) = sSrc
+    padEnd = VarMoveStr(String(length, Char))
+    Mid$(padEnd, 1, (lnSrc)) = sSrc
 End Function
 Sub padEndBuf(sSrc$, ByVal length&, Optional Char)
     Dim iMap%(), pSrc As LongPtr, lnSrc&
@@ -1446,13 +1456,6 @@ Sub padEndBuf(sSrc$, ByVal length&, Optional Char)
 End Sub
 
 '>>>>>>>ARRAY FUNCTIONS<<<<<<<<<<
-Private Sub Example_ShellSortS()
-    Dim sAr$()
-    
-    sAr = Split("яблоки Груши аппельсины Кориандр манго")
-    
-    ShellSortS sAr, Descending, vbTextCompare
-End Sub
 'http://www.excelworld.ru/board/vba/tricks/sort_array_shell/9-1-0-32
 Sub ShellSortS(Arr() As String, _
     Optional ByVal Order As SortOrder = Ascending, Optional ByVal Comp As VbCompareMethod)
@@ -1482,11 +1485,13 @@ End Sub
 
 '>>>>>>>>>>>TESTS<<<<<<<<<<<<<
 Private Sub Test_padStart()
-    Dim s1$, s2$
+    Dim s1$, s2$, s3$
     Initialize
     s1 = "12345"
 '    s2 = padStart(s1, 10, 46)
-    s2 = padEnd(s1, 8, "0")
+'    s2 = padEnd(s1, 8, "0")
+    s3 = padCenter(s1, 12, "|")
+    Debug.Print s3
 End Sub
 Private Sub Test_Strip()
     Dim s$, s2$
@@ -1523,6 +1528,13 @@ Private Sub Test_StartsWith_EndsWith()
     
     bl1 = StartsWith(s1, "тел")
     bl2 = EndsWith(s1, "изор")
+End Sub
+Private Sub Example_ShellSortS()
+    Dim sAr$()
+    
+    sAr = Split("яблоки Груши аппельсины Кориандр манго")
+    
+    ShellSortS sAr, Descending, vbTextCompare
 End Sub
 Private Sub Test_VbaMemAllocStringLen()
     Dim s1$, s2$, s3$
@@ -1787,3 +1799,4 @@ End Sub
 '    lpRef(0) = 0
 '    lRef(0) = lTmp
 'End Function
+
