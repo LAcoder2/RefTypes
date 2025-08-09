@@ -1513,6 +1513,58 @@ Sub padEndBuf(sSrc$, ByVal Length&, Optional Char)
       Next
     lpRef(0) = 0
 End Sub
+Private Sub Test_Lset2_RSet2()
+    Dim s1$, s2$
+    s1 = "abc"  '"abcdefg"
+    s2 = "1234"
+    LSet2 s1, s2
+    Debug.Print s1 '1234efg
+    RSet2 s1, s2
+    Debug.Print s1 'abc1234
+    
+End Sub
+Sub LSet2(sDst$, sSrc$)
+    Dim szDst&, szSrc&
+  #If Not PreInitMode Then
+    If IsInitialized Then Else Initialize
+  #End If
+    szDst = LenB(sDst)
+    If szDst Then Else Exit Sub
+    szSrc = LenB(sSrc)
+    If szSrc Then Else Exit Sub
+    
+    If szSrc < szDst Then
+        lRef_SA.pData = StrPtr(sDst) - 4
+        lRef(0) = szSrc
+        LSet sDst = sSrc
+        lRef(0) = szDst
+    Else
+        LSet sDst = sSrc
+    End If
+End Sub
+Sub RSet2(sDst$, sSrc$)
+    Dim szDst&, szSrc&, szOff&, pDst As LongPtr, lTmp&
+  #If Not PreInitMode Then
+    If IsInitialized Then Else Initialize
+  #End If
+    szDst = LenB(sDst)
+    If szDst Then Else Exit Sub
+    szSrc = LenB(sSrc)
+    If szSrc Then Else Exit Sub
+    
+    szOff = szDst - szSrc
+    If szOff > 0 Then
+        pDst = StrPtr(sDst) + szOff
+        lRef_SA.pData = pDst - 4
+        lTmp = lRef(0)
+        lRef(0) = szSrc
+        sRef_SA.pData = VarPtr(pDst)
+        LSet sRef(0) = sSrc
+        lRef(0) = lTmp
+    Else
+        RSet sDst = sSrc
+    End If
+End Sub
 
 '>>>>>>>ARRAY FUNCTIONS<<<<<<<<<<
 'http://www.excelworld.ru/board/vba/tricks/sort_array_shell/9-1-0-32
@@ -1858,3 +1910,4 @@ End Sub
 '    lpRef(0) = 0
 '    lRef(0) = lTmp
 'End Function
+
