@@ -1621,6 +1621,45 @@ Function SplitB(sSrc$, Optional sDlm$ = " ", Optional ByVal Cmp As VbCompareMeth
     SplitB = sArOut
 End Function
 
+Function Join2(sArr() As String, Optional sDlm$ = " ") As String
+    Dim i&, lb&, Ub&, szSum&, szDlm&, pStr As LongPtr
+    lb = LBound(sArr): Ub = UBound(sArr)
+    ReDim sizes&(lb To Ub)
+    For i = lb To Ub
+        sizes(i) = LenB(sArr(i))
+        szSum = szSum + sizes(i)
+    Next
+    szDlm = LenB(sDlm)
+    szSum = szSum + (Ub - lb) * szDlm
+    If szSum Then
+        Join2 = StringB(szSum, 0)
+        pStr = StrPtr(Join2)
+        For i = lb To Ub - 1
+    '        MemLSet pStr, StrPtr(sArr(i)), sizes(i)
+            PutStrBuf pStr, sArr(i)
+            pStr = pStr + sizes(i)
+            PutStrBuf pStr, sDlm
+            pStr = pStr + szDlm
+        Next
+        PutStrBuf pStr, sArr(Ub)
+    End If
+End Function
+Sub PutStrBuf(ByVal pBuf As LongPtr, sSrc$)
+    If pBuf > 0 Then Else GoTo errArgum
+  #If Not PreInitMode Then
+    If IsInitialized Then Else Initialize
+  #End If
+    Dim lTmp&
+    lRef_SA.pData = pBuf - 4
+    lTmp = lRef(0)
+    lRef(0) = LenB(sSrc)
+    sRef_SA.pData = VarPtr(pBuf)
+    LSet sRef(0) = sSrc
+    lRef(0) = lTmp
+Exit Sub
+errArgum:
+    Err.Raise 5, , "Bad argument!!"
+End Sub
 'http://www.excelworld.ru/board/vba/tricks/sort_array_shell/9-1-0-32
 Sub ShellSortS(Arr() As String, _
     Optional ByVal Order As SortOrder = Ascending, Optional ByVal Comp As VbCompareMethod)
@@ -1650,12 +1689,14 @@ End Sub
 
 '>>>>>>>>>>>TESTS<<<<<<<<<<<<<
 Private Sub Test_SplitB()
-    Dim s$, sAr$()
+    Dim s$, sAr$(), s2$
     Initialize
     
     s = "kjsdf uouo eweqewq xzzcc"
     
     sAr = SplitB(s)
+'    sAr = Split(s, , 3)
+    s2 = Join2(sAr)
 End Sub
 Private Sub Test_padStart()
     Dim s1$, s2$, s3$
@@ -1972,4 +2013,3 @@ End Sub
 '    lpRef(0) = 0
 '    lRef(0) = lTmp
 'End Function
-
