@@ -1162,7 +1162,7 @@ Function Repeat(ByVal Count&, sSrc$) As String
         MemLSet pDst, pSrc, szSrc
     Next
 End Function
-Function StringB(ByVal Num As Long, Char) As String
+Function StringB(ByVal num As Long, Char) As String
     Dim bChar As Byte, i&, bBuf() As Byte
   #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
@@ -1174,16 +1174,16 @@ Function StringB(ByVal Num As Long, Char) As String
         bChar = Char
     Else: Exit Function
     End If
-    ReDim bBuf(Num + 5)
+    ReDim bBuf(num + 5)
     If bChar Then
-        For i = 4 To 3 + Num
+        For i = 4 To 3 + num
             bBuf(i) = bChar
         Next
     End If
     lpRef_SA.pData = VarPtr(i) - ptrSz
     saRef_SA.pData = lpRef(0)
     lRef_SA.pData = saRef(0).pData ' VarPtr(bBuf(0))
-    lRef(0) = Num
+    lRef(0) = num
     lpRef_SA.pData = VarPtr(StringB)
     lpRef(0) = saRef(0).pData + 4
 '    saRef(0).Count = 0
@@ -1567,18 +1567,56 @@ Sub RSet2(sDst$, sSrc$)
 End Sub
 
 '>>>>>>>ARRAY FUNCTIONS<<<<<<<<<<
+Function SplitB(sSrc$, sDlm$, Optional ByVal Cmp As VbCompareMethod) As String()
+    Dim szSrc&, szDlm&, curPos&, prevPos&, sArOut$(), Ub&, maxCnt&
+    Dim pSrc As LongPtr, pStr As LongPtr, szStr&
+    szSrc = LenB(sSrc): szDlm = LenB(sDlm)
+    maxCnt = -1
+    
+    prevPos = 1
+    pSrc = StrPtr(sSrc)
+    Do
+        curPos = InStrB(prevPos, sSrc, sDlm, Cmp)
+        If curPos Then
+            If Ub < maxCnt Then
+            Else
+                maxCnt = Ub * 2 + 1
+                ReDim Preserve sArOut(maxCnt - 1)
+            End If
+            pStr = pSrc + prevPos - 1
+            szStr = curPos - prevPos
+            sArOut(Ub) = VbaMemAllocStringByteLen(pStr, szStr)
+            Ub = Ub + 1
+        Else
+            If prevPos > 1 Then
+                If prevPos < szSrc Then
+                    pStr = pSrc + prevPos - 1
+                    szStr = szSrc - prevPos + 1
+                    ReDim Preserve sArOut(Ub)
+                    sArOut(Ub) = VbaMemAllocStringByteLen(pStr, szStr)
+                Else: ReDim Preserve sArOut(Ub)
+                End If
+            End If
+            Exit Do
+        End If
+        prevPos = curPos + szDlm
+    Loop
+            
+    SplitB = sArOut
+End Function
+
 'http://www.excelworld.ru/board/vba/tricks/sort_array_shell/9-1-0-32
 Sub ShellSortS(Arr() As String, _
     Optional ByVal Order As SortOrder = Ascending, Optional ByVal Comp As VbCompareMethod)
-    Dim Limit&, Switch&, i&, j&, ij&, ub&
+    Dim Limit&, Switch&, i&, j&, ij&, Ub&
   #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
   #End If
     
-    ub = UBound(Arr)
-    j = (ub + 1) \ 2
+    Ub = UBound(Arr)
+    j = (Ub + 1) \ 2
     Do While j > 0
-        Limit = ub - j
+        Limit = Ub - j
         Do
             Switch = -1
             For i = 0 To Limit
@@ -1595,6 +1633,14 @@ Sub ShellSortS(Arr() As String, _
 End Sub
 
 '>>>>>>>>>>>TESTS<<<<<<<<<<<<<
+Private Sub Test_SplitB()
+    Dim s$, sAr$()
+    Initialize
+    
+    s = "" '"kjsdf uouo eweqewq xzzcc"
+    
+    sAr = SplitB(s, " ")
+End Sub
 Private Sub Test_padStart()
     Dim s1$, s2$, s3$
     Initialize
@@ -1738,14 +1784,14 @@ Private Sub TestStrCompVBA()
     lres2 = StrComp(s2, s1)
 End Sub
 Private Sub Example_InStrEndRev()
-    Dim sCheck$, sMatch$, lres&, lres2&, cmp As VbCompareMethod
+    Dim sCheck$, sMatch$, lres&, lres2&, Cmp As VbCompareMethod
     sCheck = "rtoiutPoIpkj"
     sMatch = "TpoI"
-    cmp = TextCompare
+    Cmp = TextCompare
     lres = InStrEndRev(sCheck, sMatch, 9, vbTextCompare, 6)
     lres2 = InStrEndRevB(sCheck, sMatch, 18, vbTextCompare, 11)
-    lres = InStrEnd(sCheck, sMatch, 6, cmp, 9)
-    lres2 = InStrEndB(sCheck, sMatch, 11, cmp, 18)
+    lres = InStrEnd(sCheck, sMatch, 6, Cmp, 9)
+    lres2 = InStrEndB(sCheck, sMatch, 11, Cmp, 18)
     Stop
 End Sub
 Private Sub TestiRef()
@@ -1910,4 +1956,3 @@ End Sub
 '    lpRef(0) = 0
 '    lRef(0) = lTmp
 'End Function
-
