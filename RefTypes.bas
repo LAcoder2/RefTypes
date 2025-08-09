@@ -892,9 +892,9 @@ skip:
     Next
 End Function
 Function InStrLenRevB(sCheck$, sMatch$, Optional ByVal Start As Long = -1, _
-    Optional ByVal length As Long = 1, Optional ByVal Compare As VbCompareMethod) As Long
+    Optional ByVal Length As Long = 1, Optional ByVal Compare As VbCompareMethod) As Long
     If Start = -1 Then Start = LenB(sCheck)
-    InStrLenRevB = InStrEndRevB(sCheck, sMatch, Start, Start - length + 1, Compare)
+    InStrLenRevB = InStrEndRevB(sCheck, sMatch, Start, Start - Length + 1, Compare)
 End Function
 
 Function InStrLen(ByVal Start As Long, sCheck$, sMatch$, ByVal lenFind As Long, _
@@ -1348,12 +1348,71 @@ Sub InsertBuf(sSrc$, ByVal pos&, sIns$)
     LSet sRef(0) = sIns
     lRef(0) = lTmp1
 End Sub
-Function padCenter(sSrc$, ByVal length&, Optional Char) As String
+Private Sub Test_Remove()
+    Dim s$, s2$
+    s = "abcdefgh"
+    Debug.Print Remove(s, 1, 4)   'efgh
+    Debug.Print Remove(s, 5, -2)   'abcfgh
+    Debug.Print Remove(s, -3, -3) 'abcgh
+    
+End Sub
+Function Remove(sSrc$, ByVal Start&, ByVal Length&) As String
+    Dim lnSrc&, maxLen&
+    Dim sRes$, lnRes&, lnTmp&
+    Dim pSrc As LongPtr, pDst As LongPtr, szTmp&
+  #If Not PreInitMode Then
+    If IsInitialized Then Else Initialize
+  #End If
+  
+    lnSrc = Len(sSrc)
+    If lnSrc Then Else Exit Function
+    If Start > 0 Then
+    ElseIf Start < 0 Then
+        Start = lnSrc + Start + 1
+    End If
+    If Length > 0 Then
+    ElseIf Length < 0 Then
+        Start = Start + Length + 1
+        If Start > 0 Then Else Exit Function
+        Length = -Length
+    Else: Exit Function
+    End If
+    If Start <= lnSrc Then Else Exit Function
+    maxLen = lnSrc - Start + 1
+    If Length > maxLen Then Length = maxLen
+    
+    lnRes = lnSrc - Length
+    sRes = String(lnRes, vbNullChar)
+    pSrc = StrPtr(sSrc): pDst = StrPtr(sRes)
+    If Start > 1 Then
+'        lnTmp = Start - 1
+'        Mid$(sRes, 1, (lnTmp)) = Mid$(sSrc, 1, (lnTmp))       'v1
+        szTmp = (Start - 1) * 2                               'v2
+        lRef_SA.pData = pDst - 4
+        lRef(0) = szTmp
+        lRef2_SA.pData = pSrc - 4
+        lRef2(0) = szTmp
+        LSet sRes = sSrc
+        lRef(0) = lnRes * 2
+        lRef2(0) = lnSrc * 2
+    End If
+    If Length < maxLen Then
+'        lnTmp = maxLen - Length
+'        Mid$(sRes, Start, (lnTmp)) = Mid$(sSrc, Start + Length, (lnTmp)) 'v1
+        szTmp = (maxLen - Length) * 2                          'v2
+        pDst = pDst + (Start - 1) * 2
+        pSrc = pSrc + (Start + Length - 1) * 2
+        MemLSet pDst, pSrc, szTmp
+    End If
+    
+    MoveStr Remove, sRes
+End Function
+Function padCenter(sSrc$, ByVal Length&, Optional Char) As String
     Dim iMap%(), pSrc As LongPtr, pDst As LongPtr, lnSrc&, lOff&, lTmp&
     Dim i&, iChar%, pDat As LongPtr
     
     lnSrc = Len(sSrc)
-    If length > lnSrc Then Else Exit Function
+    If Length > lnSrc Then Else Exit Function
     If varType(Char) = vbString Then
         iChar = AscW(Char)
     ElseIf IsNumeric(Char) Then
@@ -1361,16 +1420,16 @@ Function padCenter(sSrc$, ByVal length&, Optional Char) As String
     Else: iChar = 32
     End If
     
-    lOff = (length - lnSrc) / 2 + 1
-    padCenter = VarMoveStr(String(length, iChar))
+    lOff = (Length - lnSrc) / 2 + 1
+    padCenter = VarMoveStr(String(Length, iChar))
     Mid$(padCenter, lOff, (lnSrc)) = sSrc
 End Function
-Function padStart(sSrc$, ByVal length&, Optional Char) As String
+Function padStart(sSrc$, ByVal Length&, Optional Char) As String
     Dim iMap%(), pSrc As LongPtr, pDst As LongPtr, lnSrc&, lOff&, lTmp&
     Dim i&, iChar%, pDat As LongPtr
     
     lnSrc = Len(sSrc)
-    If length > lnSrc Then Else Exit Function
+    If Length > lnSrc Then Else Exit Function
     If varType(Char) = vbString Then
         iChar = AscW(Char)
     ElseIf IsNumeric(Char) Then
@@ -1383,7 +1442,7 @@ Function padStart(sSrc$, ByVal length&, Optional Char) As String
     iMapDyn_SA.Count = lnSrc + 3
     lpRef_SA.pData = VarPtr(pSrc) + ptrSz
     lpRef(0) = VarPtr(iMapDyn_SA)
-      ReDim Preserve iMap(length + 2)
+      ReDim Preserve iMap(Length + 2)
       
       pSrc = iMapDyn_SA.pData + 4
       If pDat <> iMapDyn_SA.pData Then
@@ -1391,9 +1450,9 @@ Function padStart(sSrc$, ByVal length&, Optional Char) As String
           lpRef2(0) = pSrc
       End If
       lRef_SA.pData = iMapDyn_SA.pData
-      lRef(0) = length * 2
+      lRef(0) = Length * 2
       
-      lOff = length - lnSrc
+      lOff = Length - lnSrc
       pDst = pSrc + (lOff) * 2
       
       lRef_SA.pData = pDst - 4
@@ -1411,22 +1470,22 @@ Function padStart(sSrc$, ByVal length&, Optional Char) As String
       Next
     lpRef(0) = 0
 End Function
-Function padEnd(sSrc$, ByVal length&, Optional Char) As String
+Function padEnd(sSrc$, ByVal Length&, Optional Char) As String
     Dim iMap%(), lnSrc&
     Dim i&
     
     lnSrc = Len(sSrc)
-    If length > lnSrc Then Else Exit Function
+    If Length > lnSrc Then Else Exit Function
     
-    padEnd = VarMoveStr(String(length, Char))
+    padEnd = VarMoveStr(String(Length, Char))
     Mid$(padEnd, 1, (lnSrc)) = sSrc
 End Function
-Sub padEndBuf(sSrc$, ByVal length&, Optional Char)
+Sub padEndBuf(sSrc$, ByVal Length&, Optional Char)
     Dim iMap%(), pSrc As LongPtr, lnSrc&
     Dim i&, iChar%, pDat As LongPtr
     
     lnSrc = Len(sSrc)
-    If length > lnSrc Then Else Exit Sub
+    If Length > lnSrc Then Else Exit Sub
     If varType(Char) = vbString Then
         iChar = AscW(Char)
     ElseIf IsNumeric(Char) Then
@@ -1439,7 +1498,7 @@ Sub padEndBuf(sSrc$, ByVal length&, Optional Char)
     iMapDyn_SA.Count = lnSrc + 3
     lpRef_SA.pData = VarPtr(pSrc) + ptrSz
     lpRef(0) = VarPtr(iMapDyn_SA)
-      ReDim Preserve iMap(length + 2)
+      ReDim Preserve iMap(Length + 2)
       
       pSrc = iMapDyn_SA.pData + 4
       If pDat <> iMapDyn_SA.pData Then
@@ -1447,9 +1506,9 @@ Sub padEndBuf(sSrc$, ByVal length&, Optional Char)
           lpRef2(0) = pSrc
       End If
       lRef_SA.pData = iMapDyn_SA.pData
-      lRef(0) = length * 2
+      lRef(0) = Length * 2
       
-      For i = lnSrc + 2 To length + 1
+      For i = lnSrc + 2 To Length + 1
           iMap(i) = iChar
       Next
     lpRef(0) = 0
@@ -1799,4 +1858,3 @@ End Sub
 '    lpRef(0) = 0
 '    lRef(0) = lTmp
 'End Function
-
