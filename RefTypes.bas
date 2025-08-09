@@ -553,6 +553,19 @@ Function VarMoveStr(vStr) As String
     End If
 End Function
 
+Function StrMoveVar(sStr$)
+    StrMoveVar = vbNullString
+    If LenB(sStr) Then
+      #If Not PreInitMode Then
+        If IsInitialized Then Else Initialize
+      #End If
+        lpRef_SA.pData = VarPtr(sStr)
+        lpRef2_SA.pData = VarPtr(StrMoveVar) + 8
+        lpRef2(0) = lpRef(0) 'StrPtr(sStr)
+        lpRef(0) = 0
+    End If
+End Function
+
 Private Sub TestMoveStr()
     Dim s1$, s2$
     s1 = "sdfa"
@@ -1567,16 +1580,18 @@ Sub RSet2(sDst$, sSrc$)
 End Sub
 
 '>>>>>>>ARRAY FUNCTIONS<<<<<<<<<<
-Function SplitB(sSrc$, sDlm$, Optional ByVal Cmp As VbCompareMethod) As String()
+Function SplitB(sSrc$, Optional sDlm$ = " ", Optional ByVal Cmp As VbCompareMethod) As String()
     Dim szSrc&, szDlm&, curPos&, prevPos&, sArOut$(), Ub&, maxCnt&
-    Dim pSrc As LongPtr, pStr As LongPtr, szStr&
+    Dim pSrc As LongPtr, pStr As LongPtr, szStr&, vSrc, vDlm
     szSrc = LenB(sSrc): szDlm = LenB(sDlm)
-    maxCnt = -1
     
+    maxCnt = -1
     prevPos = 1
     pSrc = StrPtr(sSrc)
+    vSrc = StrMoveVar(sSrc)
+    vDlm = sDlm
     Do
-        curPos = InStrB(prevPos, sSrc, sDlm, Cmp)
+        curPos = InStrB((prevPos), vSrc, vDlm, Cmp)
         If curPos Then
             If Ub < maxCnt Then
             Else
@@ -1637,9 +1652,9 @@ Private Sub Test_SplitB()
     Dim s$, sAr$()
     Initialize
     
-    s = "" '"kjsdf uouo eweqewq xzzcc"
+    s = "kjsdf uouo eweqewq xzzcc"
     
-    sAr = SplitB(s, " ")
+    sAr = SplitB(s)
 End Sub
 Private Sub Test_padStart()
     Dim s1$, s2$, s3$
@@ -1956,3 +1971,4 @@ End Sub
 '    lpRef(0) = 0
 '    lRef(0) = lTmp
 'End Function
+
