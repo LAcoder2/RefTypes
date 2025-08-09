@@ -1616,6 +1616,7 @@ Function SplitB(sSrc$, Optional sDlm$ = " ", Optional ByVal Cmp As VbCompareMeth
         End If
         prevPos = curPos + szDlm
     Loop
+    sSrc = VarMoveStr(vSrc)
             
     SplitB = sArOut
 End Function
