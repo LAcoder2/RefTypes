@@ -1,6 +1,8 @@
+Attribute VB_Name = "RefStrings"
 Option Explicit
 
 #Const SafeMode = True
+
 #If Win64 Then
   Public Const saSz = 32
 #Else
@@ -21,25 +23,25 @@ Private ULoTbl(UChrCnt - 1) As Integer, UUpTbl(UChrCnt - 1) As Integer
 Private ALoTbl(AChrCnt - 1) As Byte, AUpTbl(AChrCnt - 1) As Byte
 Private isCharTablesInit As Boolean
 
-Function IntToStr(rStr%()) As String
-    bMap1_SA.pData = VarPtr(rStr(1))
-    bMap1_SA.Count = UBound(rStr) * 2 '.Count * 2
+Function IntToStr(iStr() As Integer) As String
+    bMap1_SA.pData = VarPtr(iStr(1))
+    bMap1_SA.Count = UBound(iStr) * 2 '.Count * 2
     IntToStr = bMap1
 End Function
-'РїРѕР»СѓС‡РµРЅРёРµ РјР°СЃСЃРёРІР° integer (РєРѕС‚РѕСЂС‹Р№ Р±СѓРґРµС‚ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РЅР° РґРµСЃРєСЂРёРїС‚РѕСЂ SA), Р·Р°РјР°РїР»РµРЅРЅРѕРіРѕ РЅР° Р·Р°РґР°РЅРЅСѓСЋ С‡Р°СЃС‚СЊ СЃС‚СЂРѕРєРё.
-Function MidRef(SA As SA1D, sSrc$, Optional ByVal Start& = 1, Optional ByVal Length&) As Integer()
+'получение массива integer (который будет использовать на дескриптор SA), замапленного на заданную часть строки.
+Function MidRef(SA As SA1D, sSrc As String, Optional ByVal Start& = 1, Optional ByVal Length&) As Integer()
     Dim iArRes%(), lp As LongPtr, lnSrc&
     If IsInitialized Then Else Initialize
     
     lnSrc = Len(sSrc)
   #If SafeMode Then
-    Dim maxlen&
+    Dim maxLen&
 '    If lnSrc Then Else Exit Function
     If Start > 0 Then Else GoTo errArgum
     If Start > lnSrc Then Exit Function
     If Length > 0 Then Else GoTo errArgum
-    maxlen = lnSrc - Start + 1
-    If Length > maxlen Then Length = maxlen
+    maxLen = lnSrc - Start + 1
+    If Length > maxLen Then Length = maxLen
   #End If
    
     SA = iMap1_SA
@@ -56,19 +58,19 @@ endFn:
     
     MidRef = iArRes
 End Function
-Function MidRefB(SA As SA1D, sSrc$, ByVal Start&, Optional ByVal Length&) As Byte()
+Function MidRefB(SA As SA1D, sSrc As String, ByVal Start&, Optional ByVal Length&) As Byte()
     Dim bArRes() As Byte, lp As LongPtr, lnSrc&
     If IsInitialized Then Else Initialize
     
     lnSrc = LenB(sSrc)
   #If SafeMode Then
-    Dim maxlen&
+    Dim maxLen&
 '    If lnSrc Then Else Exit Function
     If Start > 0 Then Else GoTo errArgum
     If Start > lnSrc Then Exit Function
     If Length > 0 Then Else GoTo errArgum
-    maxlen = lnSrc - Start + 1
-    If Length > maxlen Then Length = maxlen
+    maxLen = lnSrc - Start + 1
+    If Length > maxLen Then Length = maxLen
   #End If
     
     SA = bMap1_SA
@@ -91,18 +93,18 @@ Function MidRefInt(SA As SA1D, iSrc%(), ByVal Start&, Optional ByVal Length&) As
     
     lnSrc = UBound(iSrc)
   #If SafeMode Then
-    Dim maxlen&
+    Dim maxLen&
 '    If lnSrc Then Else Exit Function
     If Start > 0 Then
         If Start > lnSrc Then Exit Function
     Else: GoTo errArgum
     End If
-    maxlen = lnSrc - Start + 1
+    maxLen = lnSrc - Start + 1
     Select Case Length
-    Case 0: Length = maxlen
+    Case 0: Length = maxLen
     Case Is > 0
-        If Length > maxlen Then Length = maxlen
-    Case Else: GoTo errArgum 'РµСЃР»Рё < 0
+        If Length > maxLen Then Length = maxLen
+    Case Else: GoTo errArgum 'если < 0
     End Select
   #End If
    
@@ -126,17 +128,17 @@ Function MidRefByt(SA As SA1D, bSrc%(), ByVal Start&, Optional ByVal Length&) As
     
     ubSrc = UBound(bSrc)
   #If SafeMode Then
-    Dim maxlen&
+    Dim maxLen&
 '    If ubSrc Then Else Exit Function
     If Start > 0 Then
         If Start > ubSrc Then Exit Function
     Else: GoTo errArgum 'if < 0
     End If
-    maxlen = ubSrc - Start + 1
+    maxLen = ubSrc - Start + 1
     Select Case Length
-    Case 0: Length = maxlen
+    Case 0: Length = maxLen
     Case Is > 0
-        If Length > maxlen Then Length = maxlen
+        If Length > maxLen Then Length = maxLen
     Case Else: GoTo errArgum 'if < 0
     End Select
   #End If
@@ -234,13 +236,13 @@ Function IntToAnsi(IntStrInp%()) As Byte()
     IntToAnsi = BytStrOut
 End Function
 Function IntFromAnsi(BytStrInp() As Byte) As Integer()
-    Dim i&, j&, ub&, lb&, strlen&, IntStrOut() As Integer
+    Dim i&, j&, Ub&, lb&, strlen&, IntStrOut() As Integer
     If isCharTablesInit Then Else InitCharTables
     
     lb = LBound(BytStrInp)
-    ub = UBound(BytStrInp)
-    ReDim IntStrOut(1 To ub - lb + 1)
-    For i = lb To ub
+    Ub = UBound(BytStrInp)
+    ReDim IntStrOut(1 To Ub - lb + 1)
+    For i = lb To Ub
         j = j + 1
         IntStrOut(j) = AtoUTbl(BytStrInp(i))
     Next
@@ -275,23 +277,23 @@ Function StrConvInt(IntStrInp() As Integer, ByVal Conv As VbStrConv) As Integer(
     
     StrConvInt = IntStrOut
 End Function
-'РєРѕРЅРІРµСЂС‚Р°С†РёСЏ Р±Р°Р№С‚РѕРІРѕРіРѕ РјР°СЃСЃРёРІР° Р±РµР· РёР·РјРµРЅРµРЅРёСЏ РµРіРѕ СЂР°Р·РјРµСЂР° (UCase, LCase)
+'конвертация байтового массива без изменения его размера (UCase, LCase)
 Function StrConvByt(BytStrInp() As Byte, ByVal Conv As VbStrConv) As Byte()
     Dim i&, BytStrOut() As Byte
-    Dim lb&, ub&, j&
+    Dim lb&, Ub&, j&
     If isCharTablesInit Then Else InitCharTables
     
     lb = LBound(BytStrInp)
-    ub = UBound(BytStrInp)
-    ReDim BytStrOut(1 To ub - lb + 1)
+    Ub = UBound(BytStrInp)
+    ReDim BytStrOut(1 To Ub - lb + 1)
     Select Case Conv
     Case vbUpperCase
-        For i = lb To ub
+        For i = lb To Ub
             j = j + 1
             BytStrOut(j) = AUpTbl(BytStrInp(i))
         Next
     Case vbLowerCase
-        For i = lb To ub
+        For i = lb To Ub
             j = j + 1
             BytStrOut(j) = ALoTbl(BytStrInp(i))
         Next
@@ -336,13 +338,13 @@ Sub LCaseBufInt(IntStr() As Integer)
         IntStr(i) = ULoTbl(IntStr(i))
     Next
 End Sub
-'РђРЅР°Р»РѕРі UCase РґР»СЏ Р±Р°Р№С‚РѕРІРѕРіРѕ РјР°СЃСЃРёРІР°
+'Аналог UCase для байтового массива
 Function UCaseByt(BytStrInp() As Byte) As Byte()
-    Dim i&, lb&, ub&, j&, arRes() As Byte
+    Dim i&, lb&, Ub&, j&, arRes() As Byte
     If isCharTablesInit Then Else InitCharTables
-    lb = LBound(BytStrInp): ub = UBound(BytStrInp)
-    ReDim arRes(1 To ub - lb + 1)
-    For i = lb To ub
+    lb = LBound(BytStrInp): Ub = UBound(BytStrInp)
+    ReDim arRes(1 To Ub - lb + 1)
+    For i = lb To Ub
         j = j + 1
         arRes(j) = AUpTbl(BytStrInp(i))
     Next
@@ -356,11 +358,11 @@ Sub UCaseBufByt(BytStr() As Byte)
     Next
 End Sub
 Function LCaseByt(BytStrInp() As Byte) As Byte()
-    Dim i&, lb&, ub&, j&, arRes() As Byte
+    Dim i&, lb&, Ub&, j&, arRes() As Byte
     If isCharTablesInit Then Else InitCharTables
-    lb = LBound(BytStrInp): ub = UBound(BytStrInp)
-    ReDim arRes(1 To ub - lb + 1)
-    For i = lb To ub
+    lb = LBound(BytStrInp): Ub = UBound(BytStrInp)
+    ReDim arRes(1 To Ub - lb + 1)
+    For i = lb To Ub
         j = j + 1
         arRes(j) = ALoTbl(BytStrInp(i))
     Next
@@ -406,7 +408,7 @@ Private Function FromAnsi(sInp$) As String
     MovePtr VarPtr(FromAnsi), VarPtr(StrConv(sInp, vbUnicode)) + 8
 End Function
 
-'Р°РЅР°Р»РѕРі InStr$() СЃ РґРѕРїРѕР»РЅРёС‚РµР»РЅС‹Рј РїР°СЂР°РјРµС‚СЂРѕРј endFind, С‡С‚РѕР±С‹ СѓРєР°Р·С‹РІР°С‚СЊ РїРѕР·РёС†РёСЋ РѕРєРѕРЅС‡Р°РЅРёСЏ РїРѕРёСЃРєР°.
+'аналог InStr$() с дополнителным параметром endFind, чтобы указывать позицию окончания поиска.
 Function InStrEndInt(isCheck%(), isMatch%(), Optional ByVal lStart As Long = 1, _
     Optional ByVal Compare As VbCompareMethod, Optional ByVal endFind As Long = -1) As Long
     If IsInitialized Then Else Initialize
@@ -448,7 +450,7 @@ Function InStrEndInt(isCheck%(), isMatch%(), Optional ByVal lStart As Long = 1, 
 skip:
     Next
 End Function
-'РїРѕРёСЃРє Р±Р°Р№С‚РѕРІРѕРіРѕ РјР°СЃСЃРёРІР° РІ Р±Р°Р№С‚РѕРІРѕРј РјР°СЃСЃРёРІРµ
+'поиск байтового массива в байтовом массиве
 Function InStrEndByt(bsCheck() As Byte, bsMatch() As Byte, Optional ByVal Start As Long = 1, _
     Optional ByVal Compare As VbCompareMethod, Optional ByVal endFind As Long = -1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, bMatch As Byte, LbCheck&, UbCheck&, LbMatch&, UbMatch&
@@ -491,7 +493,7 @@ Function InStrEndByt(bsCheck() As Byte, bsMatch() As Byte, Optional ByVal Start 
 skip:
     Next
 End Function
-'РїРѕРёСЃРє СЃ РєРѕРЅС†Р° РІ РјР°СЃСЃРёРІРµ Integer
+'поиск с конца в массиве Integer
 Function InStrEndRevInt(isCheck%(), isMatch%(), Optional ByVal Start As Long = -1, _
     Optional ByVal Compare As VbCompareMethod, Optional ByVal endFind As Long = 1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
@@ -527,7 +529,7 @@ Function InStrEndRevInt(isCheck%(), isMatch%(), Optional ByVal Start As Long = -
 skip:
     Next
 End Function
-'РїРѕРёСЃРє СЃ РєРѕРЅС†Р° РІ Р±Р°Р№С‚РѕРІРѕРј РјР°СЃСЃРёРІРµ
+'поиск с конца в байтовом массиве
 Function InStrEndRevByt(bsCheck() As Byte, bsMatch() As Byte, Optional ByVal Start As Long = -1, _
     Optional ByVal Compare As VbCompareMethod, Optional ByVal endFind As Long = 1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, bMatch As Byte
@@ -608,7 +610,7 @@ Private Sub Test_toAnsi_formAnsi()
     Dim s1$, s2$, rs1%(), iUn%(), SA1 As SA1D
     Dim bAn() As Byte, b2() As Byte
     
-    s1 = "asfРђС„Р¦ri"
+    s1 = "asfАфЦri"
     
     rs1 = MidRef(SA1, s1, 1, Len(s1))
     bAn = IntToAnsi(rs1)
@@ -652,12 +654,13 @@ Private Sub Test_MidRefIntByt()
     iAr2 = MidRefInt(SA, iAr, 3, 4)
 End Sub
 Private Sub Test_GetStrMap()
-    Dim sAnsi$, sUnic$, istr%(), bstr() As Byte
+    Dim sAnsi$, sUnic$, iStr%(), bstr() As Byte
     Dim istrSA As SA1D, bstrSA As SA1D
     
-    sUnic = "Р»РґРћР»Р«Р¤"
+    sUnic = "лдОлЫФ"
     sAnsi = StrConv(sUnic, vbFromUnicode)
     
-    istr = GetStrMap(istrSA, sUnic)
+    iStr = GetStrMap(istrSA, sUnic)
     bstr = GetStrMapB(bstrSA, sAnsi)
 End Sub
+

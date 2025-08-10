@@ -1,3 +1,4 @@
+Attribute VB_Name = "RefTypes"
 ''Attribute VB_Name = "RefTypes"
 ''================================================================================================================================'
 '' RefTypes                                                                                                                       '
@@ -141,7 +142,7 @@ Public unkRef() As IUnknown, unkRef_SA As SA1D
 Public bRef() As Byte, bRef_SA As SA1D
 Public bRef2() As Byte, bRef2_SA As SA1D
 Public llRef() As LongLong, llRef_SA As SA1D
-Public iMap1() As Integer, iMap1_SA As SA1D      'РјР°РїРїРµСЂС‹ СЃС‚СЂРѕРє (СЃ РёРЅРґРµРєСЃР°С†РёРµР№ РѕС‚ 1)
+Public iMap1() As Integer, iMap1_SA As SA1D      'мапперы строк (с индексацией от 1)
 Public iMap2() As Integer, iMap2_SA As SA1D
 Public bMap1() As Byte, bMap1_SA As SA1D
 Public bMap2() As Byte, bMap2_SA As SA1D
@@ -154,7 +155,7 @@ Public saRef() As SA1D, saRef_SA As SA1D  '27
 Private iMapDyn_SA As SA1D, bMapDyn_SA As SA1D
 Public IsInitialized As Boolean, islpRefInit As Boolean
 
-Private Sub MakeRef(Descriptor As SA1D, ByVal ptRef As LongPtr, ByVal cbElem As Long)
+Sub MakeRef(Descriptor As SA1D, ByVal ptRef As LongPtr, ByVal cbElem As Long)
     Static This            As Initializer '// Proxy for `Init_Element()`
     Static Init_Element()  As LongPtr     '// Static Init As Vector
     Static Init_Descriptor As SA1D
@@ -219,13 +220,13 @@ Sub Initialize()
     MakeRef oRef_SA, VarPtr(oRef_SA) - ptrSz, ptrSz
     MakeRef unkRef_SA, VarPtr(unkRef_SA) - ptrSz, ptrSz
     MakeRef llRef_SA, VarPtr(llRef_SA) - ptrSz, 8
-    MakeRef iMap1_SA, VarPtr(iMap1_SA) - ptrSz, 2: iMap1_SA.lBound = 1 'РјР°РїРїРµСЂС‹ СЃС‚СЂРѕРє
+    MakeRef iMap1_SA, VarPtr(iMap1_SA) - ptrSz, 2: iMap1_SA.lBound = 1 'мапперы строк
     MakeRef iMap2_SA, VarPtr(iMap2_SA) - ptrSz, 2: iMap2_SA.lBound = 1
     MakeRef bMap1_SA, VarPtr(bMap1_SA) - ptrSz, 1: bMap1_SA.lBound = 1
     MakeRef bMap2_SA, VarPtr(bMap2_SA) - ptrSz, 1: bMap2_SA.lBound = 1
-    MakeRef b3Ref1_SA, VarPtr(b3Ref1_SA) - ptrSz, 3                           'СЃСЃС‹Р»РєР° 3-Р±Р°Р№С‚РЅРѕРіРѕ С‚РёРїР°
+    MakeRef b3Ref1_SA, VarPtr(b3Ref1_SA) - ptrSz, 3                           'ссылка 3-байтного типа
     MakeRef b3Ref2_SA, VarPtr(b3Ref2_SA) - ptrSz, 3
-    MakeRef saRef_SA, VarPtr(saRef_SA) - ptrSz, LenB(saRef_SA) 'СЃСЃС‹Р»РєР° РЅР° СЃС‚СЂСѓРєС‚СѓСЂСѓ SafeArray
+    MakeRef saRef_SA, VarPtr(saRef_SA) - ptrSz, LenB(saRef_SA) 'ссылка на структуру SafeArray
     
     iMapDyn_SA = iRef_SA: iMapDyn_SA.Locks = 0: iMapDyn_SA.Features = 128
     bMapDyn_SA = bRef_SA: bMapDyn_SA.Locks = 0: bMapDyn_SA.Features = 128
@@ -530,7 +531,7 @@ Function ArrPtrI(iAry() As Integer, Optional ByVal GetDesc As Boolean) As LongPt
     ArrPtrI = lpRef2(0)
 End Function
 
-'РїРµСЂРµРјРµС‰РµРЅРёРµ СѓРєР°Р·Р°С‚РµР»СЏ (РїРµСЂРµРґР°С‡Р° РІР»Р°РґРµРЅРёСЏ)
+'перемещение указателя (передача владения)
 Sub MovePtr(ByVal pDst As LongPtr, ByVal pSrc As LongPtr)
   #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
@@ -540,7 +541,7 @@ Sub MovePtr(ByVal pDst As LongPtr, ByVal pSrc As LongPtr)
     lpRef(0) = lpRef2(0)
     lpRef2(0) = 0
 End Sub
-'РїРµСЂРµРјРµС‰РµРЅРёРµ СѓРєР°Р·Р°С‚РµР»СЏ СЃС‚СЂРѕРєРё РёР· Variant РІ String
+'перемещение указателя строки из Variant в String
 Function VarMoveStr(vStr) As String
     If varType(vStr) = vbString Then
       #If Not PreInitMode Then
@@ -572,7 +573,7 @@ Private Sub TestMoveStr()
     s2 = "1122"
     MoveStr s1, s2
 End Sub
-'Р±РµР·РѕРїР°СЃРЅРѕРµ РїРµСЂРµРјРµС‰РµРЅРёРµ СѓРєР°Р·Р°С‚РµР»СЏ СЃС‚СЂРѕРєРё
+'безопасное перемещение указателя строки
 Sub MoveStr(sDst$, sSrc$)
   #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
@@ -583,7 +584,7 @@ Sub MoveStr(sDst$, sSrc$)
     lpRef(0) = lpRef2(0)
     lpRef2(0) = 0
 End Sub
-'РѕР±РјРµРЅ СѓРєР°Р·Р°С‚РµР»СЏРјРё
+'обмен указателями
 Sub SwapPtr(ByVal p1 As LongPtr, ByVal p2 As LongPtr)
     Dim pTmp As LongPtr
     lpRef_SA.pData = p1
@@ -593,7 +594,7 @@ Sub SwapPtr(ByVal p1 As LongPtr, ByVal p2 As LongPtr)
     lpRef2(0) = pTmp
 End Sub
 
-'РђРЅР°Р»РѕРі CopyMemory
+'Аналог CopyMemory
 Sub MemLSet(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal size As Long)
     Dim sDst$, sSrc$, lTmp&
     Dim s1$, s2$
@@ -624,7 +625,7 @@ Sub MemLSet(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal size As Long)
     lRef(0) = lTmp
     lRef2(0) = lTmp
 End Sub
-'РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅР°СЏ РїСЂРѕС†РµРґСѓСЂР° РґР»СЏ MemLSet РґР»СЏ РєРѕРїРёСЂРѕРІР°РЅРёСЏ СЂР°Р·РјРµСЂР° РјРµРЅСЊС€Рµ 4 Р±Р°Р№С‚.
+'вспомогательная процедура для MemLSet для копирования размера меньше 4 байт.
 Sub MiniCopy(ByVal pDst As LongPtr, ByVal pSrc As LongPtr, ByVal size As Long)
     On size GoTo 1, 2, 3
     Exit Sub
@@ -692,25 +693,25 @@ End Function
 '    saRef_SA.pData = lpRef(0)
 '    saRef(0).pData = ptr
 'End Sub
-Sub VbaMemFree(ByVal ptr As LongPtr)
+Sub VbaMemFree(ByVal Ptr As LongPtr)
     Dim s$
     lpRef_SA.pData = VarPtr(s)
-    lpRef(0) = ptr + 4
+    lpRef(0) = Ptr + 4
 End Sub
 
-Function GetBytMap(SA As SA1D, ByVal ptr As LongPtr, ByVal cbCnt As LongPtr) As Byte()
+Function GetBytMap(SA As SA1D, ByVal Ptr As LongPtr, ByVal cbCnt As LongPtr) As Byte()
     Dim bMap() As Byte, lp As LongPtr
     SA = bMap2_SA
-    SA.pData = ptr
+    SA.pData = Ptr
     SA.Count = cbCnt
     lpRef_SA.pData = VarPtr(lp) + ptrSz
     lpRef(0) = VarPtr(SA)
     GetBytMap = bMap
 End Function
-Function GetIntMap(SA As SA1D, ByVal ptr As LongPtr, ByVal ciCnt As LongPtr) As Integer()
+Function GetIntMap(SA As SA1D, ByVal Ptr As LongPtr, ByVal ciCnt As LongPtr) As Integer()
     Dim iMap() As Integer, lp As LongPtr
     SA = iMap2_SA
-    SA.pData = ptr
+    SA.pData = Ptr
     SA.Count = ciCnt
     lpRef_SA.pData = VarPtr(lp) + ptrSz
     lpRef(0) = VarPtr(SA)
@@ -756,7 +757,7 @@ Private Function StrCompVBA(str1$, str2$) As Long
     
     StrCompVBA = dif
 End Function
-'Р°РЅР°Р»РѕРі instr$() СЃ РґРѕРїРѕР»РЅРёС‚РµР»РЅС‹Рј РїР°СЂР°РјРµС‚СЂРѕРј endFind, С‡С‚РѕР±С‹ СѓРєР°Р·С‹РІР°С‚СЊ РїРѕР·РёС†РёСЋ РѕРєРѕРЅС‡Р°РЅРёСЏ РїРѕРёСЃРєР°.
+'аналог instr$() с дополнителным параметром endFind, чтобы указывать позицию окончания поиска.
 Function InStrEnd(sCheck$, sMatch$, Optional ByVal Start As Long = 1, _
     Optional ByVal Compare As VbCompareMethod, Optional ByVal endFind As Long = -1) As Long
     Dim i&, j&, k&, lenCheck&, lenMatch&, iMatch%
@@ -1128,7 +1129,7 @@ Sub ReallocStringB(sSrc$, ByVal newSize&)
     lRef_SA.pData = bMapDyn_SA.pData
     lRef(0) = newSize
 End Sub
-'Р°РЅР°Р»РѕРі SysAllocStringLen Р¤СѓРЅРєС†РёРё РєРѕРїРёСЂСѓСЋС‰РµР№ Р·Р°РґР°РЅРЅС‹Р№ Р±СѓС„РµСЂ РІ РЅРѕРІСѓСЋ bstr-СЃС‚СЂРѕРєСѓ
+'аналог SysAllocStringLen Функции копирующей заданный буфер в новую bstr-строку
 Function VbaMemAllocStringLen(ByVal pStr As LongPtr, ByVal strlen As Long) As String
   #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
@@ -1139,7 +1140,7 @@ Function VbaMemAllocStringLen(ByVal pStr As LongPtr, ByVal strlen As Long) As St
     
     VbaMemAllocStringLen = bMap1()
 End Function
-'Р°РЅР°Р»РѕРі SysAllocStringByteLen
+'аналог SysAllocStringByteLen
 Function VbaMemAllocStringByteLen(ByVal pStr As LongPtr, ByVal strBytelen As Long) As String
   #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
@@ -1800,15 +1801,15 @@ Private Sub Test_Repeat()
 End Sub
 Private Sub Test_StartsWith_EndsWith()
     Dim s1$, s2$, bl1 As Boolean, bl2 As Boolean
-    s1 = "С‚РµР»РµРІРёР·РѕСЂ"
+    s1 = "телевизор"
     
-    bl1 = StartsWith(s1, "С‚РµР»")
-    bl2 = EndsWith(s1, "РёР·РѕСЂ")
+    bl1 = StartsWith(s1, "тел")
+    bl2 = EndsWith(s1, "изор")
 End Sub
 Private Sub Example_ShellSortS()
     Dim sAr$()
     
-    sAr = Split("СЏР±Р»РѕРєРё Р“СЂСѓС€Рё Р°РїРїРµР»СЊСЃРёРЅС‹ РљРѕСЂРёР°РЅРґСЂ РјР°РЅРіРѕ")
+    sAr = Split("яблоки Груши аппельсины Кориандр манго")
     
     ShellSortS sAr, Descending, vbTextCompare
 End Sub
@@ -1829,21 +1830,21 @@ Private Sub Test_VbaMemRealloc()
     lpRef(0) = p + 4
 End Sub
 Private Sub TestAllocFree()
-    Dim ptr As LongPtr
+    Dim Ptr As LongPtr
     Initialize
-    ptr = VbaMemAlloc(2)
-    VbaMemFreeString ptr + 4
+    Ptr = VbaMemAlloc(2)
+    VbaMemFreeString Ptr + 4
 End Sub
 Private Sub Test0MemSize()
-    Dim ptr As LongPtr, lsz As LongPtr, heap As LongPtr, lres&
+    Dim Ptr As LongPtr, lsz As LongPtr, heap As LongPtr, lres&
     Dim b() As Byte
     Initialize
     heap = GetProcessHeap
     
     b = vbNullString
     
-    ptr = GetPtr(ArrPtr(b))
-    saRef_SA.pData = ptr
+    Ptr = GetPtr(ArrPtr(b))
+    saRef_SA.pData = Ptr
     Debug.Print HeapSize(heap, 0, saRef(0).pData)
 '    CoTaskMemFree saRef(0).pData
     VbaMemFree saRef(0).pData
@@ -1891,7 +1892,7 @@ Private Sub Example_MovePtr()
     Stop
     ReDim sAr1(2): sAr1(1) = "fasfsad"
     
-    Stop 'СЃРј. Immediate
+    Stop 'см. Immediate
     MovePtr VarPtr(lp) + LenB(lp), VarPtr(lp) + LenB(lp) * 2
     Stop
 End Sub
@@ -1914,16 +1915,16 @@ Private Sub Example_InStrEndRev()
     Stop
 End Sub
 Private Sub TestiRef()
-    Dim s$: s = "РђР‘Р’"
+    Dim s$: s = "АБВ"
     Initialize
     iRef_SA.pData = StrPtr(s)
     iRef_SA.Count = Len(s)
-    iRef(2) = AscW("РЄ")
+    iRef(2) = AscW("Ъ")
     ReDim Preserve iRef(1 To 3)
 End Sub
 Private Sub TestArrayCopy()
     Dim s1$, s2$
-    s1 = "РђР‘Р’Р“Р”"
+    s1 = "АБВГД"
     s2 = "     "
     Initialize
     With iRef_SA
@@ -1947,7 +1948,7 @@ Private Sub TestArrayAssigment()
     LSet iAr1 = iAr2
     Debug.Print VarPtr(iAr1(0)); iAr1(0)
 End Sub
-'РўРµСЃС‚ РїСЂРѕРІРµСЂСЏРµС‚ СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ Р»Рё РєРѕРјР°РЅРґР° LSet РЅСѓР»СЊ-С‚РµСЂРјРёРЅР°Р» РІ РєРѕРЅС†Рµ СЃС‚СЂРѕРєРё. (РЅРµ СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚)
+'Тест проверяет устанавливает ли команда LSet нуль-терминал в конце строки. (не устанавливает)
 Private Sub TestLsetString()
     Dim s1$, s2$
     Initialize
@@ -2026,7 +2027,7 @@ Private Sub Test_VariantUnion2()
     Dim i&, SA As SA1D, sRef$(), sRefSA As SA1D
     Initialize
     
-    vArr = Array("СЃС‚СЂРѕРєР°", 344.887, "СЃС‚СЂРѕРєР°2", True, 323252)
+    vArr = Array("строка", 344.887, "строка2", True, 323252)
     
     pvArr = VarPtr(pvArr) - ptrSz
     SA = GetSA(GetPtr(pvArr))
@@ -2052,7 +2053,7 @@ Private Sub Test_VariantUnion2()
         End Select
     Next
     
-'    PutPtr(pvArr - ptrSz) = 0 'С‚СЂРµР±СѓРµС‚СЃСЏ РѕСЃРІРѕР±РѕРґРёС‚СЊ vsArr()
+'    PutPtr(pvArr - ptrSz) = 0 'требуется освободить vsArr()
 End Sub
 Private Sub Test_RefStr()
     Dim s1$, ref$(), SA As SA1D, emp$()
@@ -2083,3 +2084,4 @@ End Sub
 '    lpRef(0) = 0
 '    lRef(0) = lTmp
 'End Function
+
