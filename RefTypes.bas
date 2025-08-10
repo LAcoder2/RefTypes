@@ -717,6 +717,23 @@ Function GetIntMap(SA As SA1D, ByVal ptr As LongPtr, ByVal ciCnt As LongPtr) As 
     GetIntMap = iMap
 End Function
 
+Sub PutStrBuf(ByVal pBuf As LongPtr, sSrc$)
+    If pBuf > 0 Then Else GoTo errArgum
+  #If Not PreInitMode Then
+    If IsInitialized Then Else Initialize
+  #End If
+    Dim lTmp&
+    lRef_SA.pData = pBuf - 4
+    lTmp = lRef(0)
+    lRef(0) = LenB(sSrc)
+    sRef_SA.pData = VarPtr(pBuf)
+    LSet sRef(0) = sSrc
+    lRef(0) = lTmp
+Exit Sub
+errArgum:
+    Err.Raise 5, , "Bad argument!!"
+End Sub
+
 '>>>>>>>>>>>>>>>STRINGS SECTION<<<<<<<<<<<<<<<<<<<'
 Private Function StrCompVBA(str1$, str2$) As Long
     Dim len1&, len2&, lenMin&
@@ -1578,6 +1595,47 @@ Sub RSet2(sDst$, sSrc$)
         RSet sDst = sSrc
     End If
 End Sub
+'https://github.com/bddicken/languages/tree/main/levenshtein
+Function LevenshteinDistance(str1 As String, str2 As String) As Long
+  #If Not PreInitMode Then
+    If IsInitialized Then Else Initialize
+  #End If
+    'Input validation
+    Dim m&, n&, i&, j&
+    m = Len(str1): n = Len(str2)
+    If str1 = str2 Then Exit Function
+    If m = 0 Then LevenshteinDistance = n: Exit Function
+    If n = 0 Then LevenshteinDistance = m: Exit Function
+    'Make str1 the shorter string for space optimization
+    If m > n Then LevenshteinDistance = LevenshteinDistance(str2, str1)
+    
+    'Use two rows instead of full matrix
+    Dim prevRow&(): ReDim prevRow(m + 1)
+    Dim currRow&(): ReDim currRow(m + 1)
+    For i = 0 To m
+        prevRow(i) = i
+    Next
+    
+    Dim cost&, pStr1 As LongPtr, pStr2 As LongPtr
+    iMap1_SA.pvData = StrPtr(str1): iMap1_SA.Bounds.cCount = m 'Len(str1)
+    iMap2_SA.pvData = StrPtr(str2): iMap2_SA.Bounds.cCount = n 'Len(str2)
+    For j = 1 To n
+        currRow(0) = j
+        'Calculate minimum of three operations:
+        For i = 1 To m
+'            If Mid$(str1, i, 1) = Mid$(str2, j, 1) Then cost = 0 Else cost = 1 'very slowly
+            If iMap1(i) = iMap2(j) Then cost = 0 Else cost = 1
+            currRow(i) = min(prevRow(i) + 1, _
+                             currRow(i - 1) + 1, _
+                             prevRow(i - 1) + cost)
+        Next
+        For i = 0 To m
+            prevRow(i) = currRow(i)
+        Next
+    Next
+    
+    LevenshteinDistance = prevRow(m)
+End Function
 
 '>>>>>>>ARRAY FUNCTIONS<<<<<<<<<<
 Function SplitB(sSrc$, Optional sDlm$ = " ", Optional ByVal Cmp As VbCompareMethod) As String()
@@ -1588,7 +1646,14 @@ Function SplitB(sSrc$, Optional sDlm$ = " ", Optional ByVal Cmp As VbCompareMeth
     maxCnt = -1
     prevPos = 1
     pSrc = StrPtr(sSrc)
+  #If SafeMode Then
     vSrc = StrMoveVar(sSrc)
+  #Else
+    Dim pTmp As LongPtr
+    vSrc = vbNullString
+    pTmp = VarPtr(vSrc) + 8
+    PutPtr(pTmp) = StrPtr(sSrc)
+  #End If
     vDlm = sDlm
     Do
         curPos = InStrB((prevPos), vSrc, vDlm, Cmp)
@@ -1616,8 +1681,12 @@ Function SplitB(sSrc$, Optional sDlm$ = " ", Optional ByVal Cmp As VbCompareMeth
         End If
         prevPos = curPos + szDlm
     Loop
+  #If SafeMode Then
     sSrc = VarMoveStr(vSrc)
-            
+  #Else
+    PutPtr(pTmp) = 0
+  #End If
+    
     SplitB = sArOut
 End Function
 
@@ -1644,22 +1713,7 @@ Function Join2(sArr() As String, Optional sDlm$ = " ") As String
         PutStrBuf pStr, sArr(Ub)
     End If
 End Function
-Sub PutStrBuf(ByVal pBuf As LongPtr, sSrc$)
-    If pBuf > 0 Then Else GoTo errArgum
-  #If Not PreInitMode Then
-    If IsInitialized Then Else Initialize
-  #End If
-    Dim lTmp&
-    lRef_SA.pData = pBuf - 4
-    lTmp = lRef(0)
-    lRef(0) = LenB(sSrc)
-    sRef_SA.pData = VarPtr(pBuf)
-    LSet sRef(0) = sSrc
-    lRef(0) = lTmp
-Exit Sub
-errArgum:
-    Err.Raise 5, , "Bad argument!!"
-End Sub
+
 'http://www.excelworld.ru/board/vba/tricks/sort_array_shell/9-1-0-32
 Sub ShellSortS(Arr() As String, _
     Optional ByVal Order As SortOrder = Ascending, Optional ByVal Comp As VbCompareMethod)
@@ -1950,6 +2004,14 @@ Private Sub Test_VariantUnion()
     vRef_SA.pData = VarPtr(vd)
     Debug.Print vdRef(0).val
 End Sub
+Private Sub TestMinusNull()
+    Dim l&
+    TestMinusNulll -0
+End Sub
+Private Sub TestMinusNulll(l)
+    Debug.Print l < 0
+End Sub
+
 Private Sub Test_VariantUnion2()
     Dim pvArr As LongPtr, vArr(), _
         vsArr() As sVariant, vlpArr() As lpVariant, vdArr() As dVariant, viArr() As iVariant
