@@ -48,19 +48,19 @@ End Type
 Private CollItemRef() As tpCollItem, CollItemRef_SA As SA1D, CollItemRef2() As tpCollItem, CollItemRef2_SA As SA1D
 'Private tCollRef() As tpCollection, tCollRef_SA As SA1D
 Private isCollItemRefInit As Boolean
-'#If Win64 Then
-'    Private Const ptrSz = 8
-'    Private Const varSz = 24
+#If Win64 Then
+    Private Const ptrSz = 8
+    Private Const varSz = 24
 '    Private Const collItemOffset = 40
-'#Else
-'    Private Const ptrSz = 4
-'    Private Const varSz = 16
+#Else
+    Private Const ptrSz = 4
+    Private Const varSz = 16
 '    Private Const collItemOffset = 24
-'#End If
+#End If
 Private Const NullPtr As LongPtr = 0
 
 Private Sub Example()
-    Dim coll As New VBA.Collection, item
+    Dim coll As New VBA.Collection
     
     coll.Add "item1", "key1"
     coll.Add "item2", "key2"
@@ -72,6 +72,22 @@ Private Sub Example()
     Debug.Print ColExists("key7", coll)
     Debug.Print ColExists("key2", coll)
     Debug.Print CollKeyByIndex(2, coll)
+    
+    Dim keys$(), Items()
+    keys = ColKeys(coll)
+    Items = ColItems(coll)
+    Debug.Print Join2(keys) & vbCr & _
+                Join(Items)
+End Sub
+Private Sub ColKeysItemsTest()
+    Dim i&, coll As New VBA.Collection
+    
+    
+    coll.Add "item1", "key1"
+    coll.Add "item2", "key2"
+    coll.Add "item3", "key3"
+
+    
 End Sub
 
 Private Function CollKeyByIndex(ByVal Index As Long, coll As Collection) As String
@@ -182,19 +198,6 @@ Private Function ColExists(Key As String, col As VBA.Collection) As Boolean
     Loop
     CollItemRef_SA.pData = 0
 End Function
-Private Sub ColKeysItemsTest()
-    Dim i&, coll As New VBA.Collection
-    Dim keys$(), Items()
-    
-    coll.Add "item1", "key1"
-    coll.Add "item2", "key2"
-    coll.Add "item3", "key3"
-
-    keys = ColKeys(coll)
-    Items = ColItems(coll)
-    Debug.Print Join2(keys) & vbCr & _
-                Join(Items)
-End Sub
 
 
 'Function ColKeys(coll As VBA.Collection) As String()
