@@ -48,15 +48,15 @@ End Type
 Private CollItemRef() As tpCollItem, CollItemRef_SA As SA1D, CollItemRef2() As tpCollItem, CollItemRef2_SA As SA1D
 'Private tCollRef() As tpCollection, tCollRef_SA As SA1D
 Private isCollItemRefInit As Boolean
-#If Win64 Then
-    Private Const ptrSz = 8
-    Private Const varSz = 24
-    Private Const collItemOffset = 40
-#Else
-    Private Const ptrSz = 4
-    Private Const varSz = 16
-    Private Const collItemOffset = 24
-#End If
+'#If Win64 Then
+'    Private Const ptrSz = 8
+'    Private Const varSz = 24
+'    Private Const collItemOffset = 40
+'#Else
+'    Private Const ptrSz = 4
+'    Private Const varSz = 16
+'    Private Const collItemOffset = 24
+'#End If
 Private Const NullPtr As LongPtr = 0
 
 Private Sub Example()
