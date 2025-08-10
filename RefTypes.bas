@@ -1617,8 +1617,8 @@ Function LevenshteinDistance(str1 As String, str2 As String) As Long
     Next
     
     Dim cost&, pStr1 As LongPtr, pStr2 As LongPtr
-    iMap1_SA.pvData = StrPtr(str1): iMap1_SA.Bounds.cCount = m 'Len(str1)
-    iMap2_SA.pvData = StrPtr(str2): iMap2_SA.Bounds.cCount = n 'Len(str2)
+    iMap1_SA.pData = StrPtr(str1): iMap1_SA.Count = m 'Len(str1)
+    iMap2_SA.pData = StrPtr(str2): iMap2_SA.Count = n 'Len(str2)
     For j = 1 To n
         currRow(0) = j
         'Calculate minimum of three operations:
@@ -1635,6 +1635,11 @@ Function LevenshteinDistance(str1 As String, str2 As String) As Long
     Next
     
     LevenshteinDistance = prevRow(m)
+End Function
+Private Function min(ByVal a&, ByVal b&, ByVal c&) As Long
+    min = a
+    If b < a Then min = b
+    If c < min Then min = c
 End Function
 
 '>>>>>>>ARRAY FUNCTIONS<<<<<<<<<<
@@ -1742,6 +1747,9 @@ Sub ShellSortS(Arr() As String, _
 End Sub
 
 '>>>>>>>>>>>TESTS<<<<<<<<<<<<<
+Private Sub Test_Levenshtein_Distance()
+    Debug.Print LevenshteinDistance("Excel", "ExcelOper")
+End Sub
 Private Sub Test_SplitB()
     Dim s$, sAr$(), s2$
     Initialize
