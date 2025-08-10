@@ -79,15 +79,17 @@ Private Sub Example()
     Debug.Print Join2(keys) & vbCr & _
                 Join(Items)
 End Sub
-Private Sub ColKeysItemsTest()
-    Dim i&, coll As New VBA.Collection
-    
-    
-    coll.Add "item1", "key1"
-    coll.Add "item2", "key2"
-    coll.Add "item3", "key3"
 
+Private Sub InitCollItemRef()
+    Dim tciTmp As tpCollItem ', tcTmp As tpCollection
+    If isCollItemRefInit Then Exit Sub
+    If IsInitialized Then Else Initialize
     
+    MakeRef CollItemRef_SA, VarPtr(CollItemRef_SA) - ptrSz, LenB(tciTmp)
+    MakeRef CollItemRef2_SA, VarPtr(CollItemRef2_SA) - ptrSz, LenB(tciTmp)
+'    MakeRef tCollRef_SA, VarPtr(tCollRef_SA) - ptrSz, LenB(tcTmp)
+    
+    isCollItemRefInit = True
 End Sub
 
 Private Function CollKeyByIndex(ByVal Index As Long, coll As Collection) As String
@@ -108,18 +110,6 @@ Private Function CollKeyByIndex(ByVal Index As Long, coll As Collection) As Stri
     CollItemRef_SA.pData = 0
 End Function
 
-Private Sub InitCollItemRef()
-    Dim tciTmp As tpCollItem ', tcTmp As tpCollection
-    If isCollItemRefInit Then Exit Sub
-    If IsInitialized Then Else Initialize
-    
-    MakeRef CollItemRef_SA, VarPtr(CollItemRef_SA) - ptrSz, LenB(tciTmp)
-    MakeRef CollItemRef2_SA, VarPtr(CollItemRef2_SA) - ptrSz, LenB(tciTmp)
-'    MakeRef tCollRef_SA, VarPtr(tCollRef_SA) - ptrSz, LenB(tcTmp)
-    
-    isCollItemRefInit = True
-End Sub
-'RefTypesUsing
 Function ColKeys(coll As VBA.Collection) As String()
     Dim keys$(), i&, Ub&, Key$
     If isCollItemRefInit Then Else InitCollItemRef
