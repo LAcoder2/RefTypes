@@ -28,7 +28,7 @@ Option Explicit
 '    pRootItem           As LongPtr             ' // 0x28
 '    pvUnk5              As LongPtr             ' // 0x2C
 'End Type
-Private Type tpCollItem
+Private Type tCollItem
     vItem         As Variant    '0  0   0
     sKey          As String     '16 10  24
     pPrev         As LongPtr    '20 14  32
@@ -47,23 +47,19 @@ Private Type GatherKeysInOrderStack
     pRoot As LongPtr
 End Type
 
-Private CollItemRef() As tpCollItem, CollItemRef_SA As SA1D, CollItemRef2() As tpCollItem, CollItemRef2_SA As SA1D
+Private CollItemRef() As tCollItem, CollItemRef_SA As SA1D, CollItemRef2() As tCollItem, CollItemRef2_SA As SA1D
 'Private tCollRef() As tpCollection, tCollRef_SA As SA1D
 Private isCollItemRefInit As Boolean
-#If Win64 Then
-    Private Const ptrSz = 8
-    Private Const varSz = 24
-    Private Const RightOffset = 64
-    Private Const LeftOffset = 72
-'    Private Const collItemOffset = 40
-#Else
-    Private Const ptrSz = 4
-    Private Const varSz = 16
-    Private Const RightOffset = 36
-    Private Const LeftOffset = 40
+'#If Win64 Then
+'    Private Const RightOffset = 64
+'    Private Const LeftOffset = 72
+''    Private Const collItemOffset = 40
+'#Else
+    Private Const RightOffset = varSz + ptrSz * 5   '36
+    Private Const LeftOffset = RightOffset + ptrSz '40
 '    Private Const collItemOffset = 24
-#End If
-Private Const NullPtr As LongPtr = 0
+'#End If
+Const NullPtr As LongPtr = 0
 
 Private Sub Example()
     Dim coll As New VBA.Collection
@@ -90,12 +86,18 @@ Private Sub Example()
                 Join(Items)
     Debug.Print
     
-    keys = collSortedKeys(coll)
+    keys = CollSortedKeys(coll)
     Debug.Print Join2(keys, vbCr)
+    Debug.Print
+    Debug.Print CollKeyIndex("Ананас", coll)
+'    Debug.Print coll("Банан")
+    Debug.Print CollRemoveByKey("Банан", coll)
+'    Debug.Print coll("Банан")
+    
 End Sub
 
 Private Sub InitCollItemRef()
-    Dim tciTmp As tpCollItem ', tcTmp As tpCollection
+    Dim tciTmp As tCollItem ', tcTmp As tpCollection
     If isCollItemRefInit Then Exit Sub
     If IsInitialized Then Else Initialize
     
@@ -126,11 +128,11 @@ Private Function CollKeyByIndex(ByVal Index As Long, coll As Collection) As Stri
     CollItemRef_SA.pData = 0
 End Function
 Function CollKeys(coll As VBA.Collection) As String()
-    Dim keys$(), i&, Ub&, Key$
+    Dim keys$(), i&, Ub&
     If isCollItemRefInit Then Else InitCollItemRef
     
     Ub = coll.Count - 1
-    If Ub = -1 Then Exit Function
+    If Ub > -1 Then Else Exit Function
     ReDim keys(Ub)
     CollItemRef_SA.pData = ObjPtr(coll)
     For i = 0 To Ub
@@ -157,17 +159,18 @@ Function CollItems(coll As VBA.Collection) As Variant()
     
     CollItems = Items
 End Function
-Private Function CollItem(Key As String, col As VBA.Collection) As Variant
+
+Function CollItem(Key As String, Col As VBA.Collection) As Variant
     Dim pItem As Long, pRoot As Long
     If isCollItemRefInit Then Else InitCollItemRef
     
-    CollItemRef_SA.pData = ObjPtr(col)
+    CollItemRef_SA.pData = ObjPtr(Col)
     pRoot = CollItemRef(0).pLeft            'pRootItem
     pItem = CollItemRef(0).pRight           'pFirstItem
     CollItemRef_SA.pData = pItem
     
     Do Until pItem = pRoot
-        Select Case StrComp(Key, CollItemRef(0).sKey)
+        Select Case StrComp(Key, CollItemRef(0).sKey) ' , vbTextCompare)??
         Case -1: pItem = CollItemRef(0).pLeft     'если меньше
         Case 0                                    'если равны
             CollItem = CollItemRef(0).vItem
@@ -181,11 +184,11 @@ Private Function CollItem(Key As String, col As VBA.Collection) As Variant
     
     MsgBox "Element not found"
 End Function
-Private Function CollExists(Key As String, col As VBA.Collection) As Boolean
+Function CollExists(Key As String, Col As VBA.Collection) As Boolean
     Dim pItem As Long, pRoot As Long
     If isCollItemRefInit Then Else InitCollItemRef
     
-    CollItemRef_SA.pData = ObjPtr(col)
+    CollItemRef_SA.pData = ObjPtr(Col)
     pRoot = CollItemRef(0).pLeft            'pRootItem
     pItem = CollItemRef(0).pRight           'pFirstItem
     CollItemRef_SA.pData = pItem
@@ -202,9 +205,75 @@ Private Function CollExists(Key As String, col As VBA.Collection) As Boolean
     Loop
     CollItemRef_SA.pData = 0
 End Function
+Function CollRemoveByKey(Key As String, Col As VBA.Collection) As Boolean
+    Dim pItem As Long, pRoot As Long, lIndex&
+    If isCollItemRefInit Then Else InitCollItemRef
+    
+    CollItemRef_SA.pData = ObjPtr(Col)
+    pRoot = CollItemRef(0).pLeft            'pRootItem
+    pItem = CollItemRef(0).pRight           'pFirstItem
+    CollItemRef_SA.pData = pItem
+    
+    Do Until pItem = pRoot
+        Select Case StrComp(Key, CollItemRef(0).sKey) ' , vbTextCompare)??
+        Case -1: pItem = CollItemRef(0).pLeft     'если меньше
+        Case 0                                    'если равны
+            lIndex = 1
+            Do
+                With CollItemRef(0)
+                  If .pPrev Then
+                      lIndex = lIndex + 1
+                      CollItemRef_SA.pData = .pPrev
+                  Else: Exit Do
+                  End If
+                End With
+            Loop
+            Col.Remove lIndex
+            CollItemRef_SA.pData = 0
+            CollRemoveByKey = True: Exit Function 'RETURN
+        Case Else: pItem = CollItemRef(0).pRight  'если больше
+        End Select
+        CollItemRef_SA.pData = pItem
+    Loop
+    CollItemRef_SA.pData = 0
+End Function
+Function CollKeyIndex(Key As String, Col As VBA.Collection) As Long
+    Dim pItem As Long, pRoot As Long, lIndex&
+    If isCollItemRefInit Then Else InitCollItemRef
+    
+    CollItemRef_SA.pData = ObjPtr(Col)
+    pRoot = CollItemRef(0).pLeft            'pRootItem
+    pItem = CollItemRef(0).pRight           'pFirstItem
+    CollItemRef_SA.pData = pItem
+    
+    Do Until pItem = pRoot
+        Select Case StrComp(Key, CollItemRef(0).sKey) ' , vbTextCompare)??
+        Case -1: pItem = CollItemRef(0).pLeft     'если меньше
+        Case 0                                    'если равны
+            lIndex = 1
+            Do
+                With CollItemRef(0)
+                  If .pPrev Then
+                      lIndex = lIndex + 1
+                      CollItemRef_SA.pData = .pPrev
+                  Else: Exit Do
+                  End If
+                End With
+            Loop
+            CollKeyIndex = lIndex 'RETURN
+            CollItemRef_SA.pData = 0
+            Exit Function
+        Case Else: pItem = CollItemRef(0).pRight  'если больше
+        End Select
+        CollItemRef_SA.pData = pItem
+    Loop
+    CollItemRef_SA.pData = 0
+    
+    MsgBox "Element not found"
+End Function
 
 'https://www.vbforums.com/showthread.php?868451-Iterate-thru-VB6-Collection-in-Alphabetic-Key-Order
-Function collSortedKeys(coll As Collection, Optional ByVal blReverse As Boolean) As String()
+Function CollSortedKeys(coll As Collection, Optional ByVal blReverse As Boolean) As String()
     ' Originally written by Wqweto, tweaked by Elroy.
     ' Returns 0 to -1 array on empty Collection.
     ' This is particularly nice when you want to use the Collection for nothing but sorting.
@@ -232,9 +301,9 @@ Function collSortedKeys(coll As Collection, Optional ByVal blReverse As Boolean)
       End If
       
       ' Gather the keys.
-      ReDim collSortedKeys(1 To coll.Count)
-      GatherKeysInOrder pFirst, collSortedKeys, argStack
-      If .Count < coll.Count Then ReDim Preserve collSortedKeys(1 To .Count)
+      ReDim CollSortedKeys(1 To coll.Count)
+      GatherKeysInOrder pFirst, CollSortedKeys, argStack
+      If .Count < coll.Count Then ReDim Preserve CollSortedKeys(1 To .Count)
     End With
     CollItemRef_SA.pData = 0
 End Function
