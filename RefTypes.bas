@@ -545,7 +545,7 @@ Sub MovePtr(ByVal pDst As LongPtr, ByVal pSrc As LongPtr)
 End Sub
 'перемещение указателя строки из Variant в String
 Function VarMoveStr(vStr) As String
-    If varType(vStr) = vbString Then
+    If VarType(vStr) = vbString Then
       #If Not PreInitMode Then
         If IsInitialized Then Else Initialize
       #End If
@@ -1206,7 +1206,7 @@ Function StringB(ByVal num As Long, Char) As String
   #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
   #End If
-    If varType(Char) = vbString Then
+    If VarType(Char) = vbString Then
         bChar = Asc(Char)
     ElseIf IsNumeric(Char) Then
         If Char > -1 Then Else Exit Function
@@ -1452,7 +1452,7 @@ Function padCenter(sSrc$, ByVal Length&, Optional Char) As String
     
     lnSrc = Len(sSrc)
     If Length > lnSrc Then Else Exit Function
-    If varType(Char) = vbString Then
+    If VarType(Char) = vbString Then
         iChar = AscW(Char)
     ElseIf IsNumeric(Char) Then
         iChar = Char
@@ -1469,7 +1469,7 @@ Function padStart(sSrc$, ByVal Length&, Optional Char) As String
     
     lnSrc = Len(sSrc)
     If Length > lnSrc Then Else Exit Function
-    If varType(Char) = vbString Then
+    If VarType(Char) = vbString Then
         iChar = AscW(Char)
     ElseIf IsNumeric(Char) Then
         iChar = Char
@@ -1525,7 +1525,7 @@ Sub padEndBuf(sSrc$, ByVal Length&, Optional Char)
     
     lnSrc = Len(sSrc)
     If Length > lnSrc Then Else Exit Sub
-    If varType(Char) = vbString Then
+    If VarType(Char) = vbString Then
         iChar = AscW(Char)
     ElseIf IsNumeric(Char) Then
         iChar = Char

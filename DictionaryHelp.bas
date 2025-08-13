@@ -246,7 +246,68 @@ Private Function DictItems(Dic As Dictionary) As Variant()
     
     DictItems = vArOut
 End Function
+Function DictJoinedKeys(dict As Dictionary, Optional Dlm$ = " ") As String
+    Dim i&, sRes$, resLen&, dlmLen&, newLen&, maxLen&, keyLen&
+    Dim pRes As LongPtr, pDst As LongPtr, stpInc&, sTmp$, pTmp As LongPtr
+    If isDictHlpRefInit Then Else InitDictHlp
+    
+    dlmLen = LenB(Dlm)
+    DictDescRef_SA.pData = ObjPtr(dict)
+    With DictDescRef(0)
+      If .lCnt Then Else GoTo endFn
+      stpInc = 8
+      DictItemRef_SA.pData = .pFirst
+      sRes = DictItemRef(0).Key ': Debug.Print StrPtr(sRes)
+      pDst = StrPtr(sRes)
+      resLen = LenB(sRes)
+      pTmp = VarPtr(sTmp)
+      For i = 2 To DictDescRef(0).lCnt
+          DictItemRef_SA.pData = DictItemRef(0).pNext
+          With DictItemRef(0)
+            If VarType(.Key) = vbString Then
+                keyLen = LenB(.Key)
+                sRef2_SA.pData = VarPtr(.Key) + 8
+            Else
+                sTmp = .Key
+                keyLen = LenB(sTmp)
+                sRef2_SA.pData = pTmp
+            End If
+            newLen = resLen + dlmLen + keyLen
+            If newLen > maxLen Then
+                Do
+                    maxLen = maxLen + stpInc
+                    stpInc = stpInc * 2
+                Loop While newLen > maxLen
+                ReallocStringB sRes, maxLen ': Debug.Print StrPtr(sRes)
+                pRes = StrPtr(sRes)
+            End If
+            pDst = pRes + resLen
+            PutStrBuf pDst, Dlm
+            pDst = pDst + dlmLen
+            PutStrBuf pDst, sRef2(0)
+            
+            resLen = newLen
+          End With
+      Next
+    End With
+    ReallocStringB sRes, resLen ': Debug.Print StrPtr(sRes)
+    
+    MoveStr DictJoinedKeys, sRes
+endFn:
+    DictItemRef_SA.pData = 0
+    DictDescRef_SA.pData = 0
+End Function
 
+Private Sub Test_DictJoinedKeys()
+    Dim dict As New Dictionary
+    Dim s$
+    dict.Add "key1", "item1"
+    dict.Add 5, "item2"
+    dict.Add 57.33, "item3"
+    dict.Add "key4", "item4"
+
+    s = DictJoinedKeys(dict)
+End Sub
 '' Получить список элементов
 'Private Function Items(Dic As Dictionary) As Variant
 '    Dim pItem As Long, loc() As Variant, i As Long
