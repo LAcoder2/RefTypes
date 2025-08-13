@@ -59,13 +59,32 @@ Private DictItemRef2() As tDictItem, DictItemRef2_SA As SA1D
 Private DictDescRef() As tDictDescr, DictDescRef_SA As SA1D
 Private isDictHlpRefInit As Boolean
 
+Private Sub TestDescr()
+    Dim dict As New Dictionary, i&, pNext As LongPtr
+    InitDictHlp
+    dict.Add "key1", "item1"
+    dict.Add "key2", "item2"
+    dict.Add "key3", "item3"
+    
+    DictDescRef_SA.pData = ObjPtr(dict)
+    With DictDescRef(0)
+      DictItemRef_SA.pData = .pFirst
+      Debug.Print .pFirst
+      For i = 2 To .lCnt
+          pNext = DictItemRef(0).pNext
+          DictItemRef_SA.pData = pNext
+          Debug.Print pNext
+      Next
+    End With
+    
+End Sub
+
 Private Sub Example()
     Dim dict As New Dictionary
     
     dict.Add "key1", "item1"
     dict.Add "key2", "item2"
     dict.Add "key3", "item3"
-'    Debug.Print GetItemVBA(dict, "key3")
 '    Debug.Print DictItem(dict, "key2")
 '    Debug.Print DictItemByIndex(dict, 2)
 '    Debug.Print DictKeyByIndex(dict, 3)
@@ -96,6 +115,7 @@ Function DictItemByIndex(Dic As Dictionary, ByVal Index As Long) As Variant
       Case 1 To .lCnt
       Case Else: GoTo errArgum
       End Select
+      
       DictItemRef_SA.pData = .pFirst
     End With
     For i = 2 To Index
@@ -121,6 +141,7 @@ Function DictKeyByIndex(Dic As Dictionary, ByVal Index As Long) As Variant
       Case 1 To .lCnt
       Case Else: GoTo errArgum
       End Select
+      
       DictItemRef_SA.pData = .pFirst
     End With
     For i = 2 To Index
@@ -146,6 +167,7 @@ Sub DictRemoveByIndex(Dic As Dictionary, ByVal Index As Long)
       Case 1 To .lCnt
       Case Else: GoTo errArgum
       End Select
+      
       DictItemRef_SA.pData = .pFirst
     End With
     For i = 2 To Index

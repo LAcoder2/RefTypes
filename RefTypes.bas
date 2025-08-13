@@ -18,7 +18,7 @@ Option Explicit
 
 #Const SafeMode = True
 '#Const PreInitMode = True
-Private Enum Context
+Enum Context
 #If Win64 Then
     [_]   '// 0 on x64; undefined on x86.
 #End If
@@ -193,6 +193,8 @@ Sub Initialize()
     islpRefInit = True
     MakeRef lpRef2_SA, VarPtr(lpRef2_SA) - ptrSz, ptrSz
 '    lpRef2 = RefPtr(lpRef2_SA)
+    MakeRef bRef_SA, VarPtr(bRef_SA) - ptrSz, 1
+    MakeRef bRef2_SA, VarPtr(bRef2_SA) - ptrSz, 1
     MakeRef iRef_SA, VarPtr(iRef_SA) - ptrSz, 2
     MakeRef iRef2_SA, VarPtr(iRef2_SA) - ptrSz, 2
     MakeRef blRef_SA, VarPtr(blRef_SA) - ptrSz, 2
@@ -1100,6 +1102,12 @@ Sub ReallocString(sSrc$, ByVal newSize&)
     lRef_SA.pData = iMapDyn_SA.pData
     lRef(0) = newSize * 2
 End Sub
+Private Sub Test_ReallocStringB()
+    Dim s$
+    s = "aaa"
+    
+    ReallocStringB s, 12
+End Sub
 Sub ReallocStringB(sSrc$, ByVal newSize&)
     Dim bMap() As Byte, pSrc As LongPtr
     If newSize < 0 Then Exit Sub
@@ -1644,7 +1652,7 @@ Private Function min(ByVal a&, ByVal b&, ByVal c&) As Long
 End Function
 
 '>>>>>>>ARRAY FUNCTIONS<<<<<<<<<<
-Function SplitB(sSrc$, Optional sDlm$ = " ", Optional ByVal Cmp As VbCompareMethod) As String()
+Function SplitB(sSrc$, Optional sDlm$ = " ", Optional ByVal cmp As VbCompareMethod) As String()
     Dim szSrc&, szDlm&, curPos&, prevPos&, sArOut$(), Ub&, maxCnt&
     Dim pSrc As LongPtr, pStr As LongPtr, szStr&, vSrc, vDlm
     szSrc = LenB(sSrc): szDlm = LenB(sDlm)
@@ -1662,7 +1670,7 @@ Function SplitB(sSrc$, Optional sDlm$ = " ", Optional ByVal Cmp As VbCompareMeth
   #End If
     vDlm = sDlm
     Do
-        curPos = InStrB((prevPos), vSrc, vDlm, Cmp)
+        curPos = InStrB((prevPos), vSrc, vDlm, cmp)
         If curPos Then
             If Ub < maxCnt Then
             Else
@@ -1904,14 +1912,14 @@ Private Sub TestStrCompVBA()
     lres2 = StrComp(s2, s1)
 End Sub
 Private Sub Example_InStrEndRev()
-    Dim sCheck$, sMatch$, lres&, lres2&, Cmp As VbCompareMethod
+    Dim sCheck$, sMatch$, lres&, lres2&, cmp As VbCompareMethod
     sCheck = "rtoiutPoIpkj"
     sMatch = "TpoI"
-    Cmp = TextCompare
+    cmp = TextCompare
     lres = InStrEndRev(sCheck, sMatch, 9, vbTextCompare, 6)
     lres2 = InStrEndRevB(sCheck, sMatch, 18, vbTextCompare, 11)
-    lres = InStrEnd(sCheck, sMatch, 6, Cmp, 9)
-    lres2 = InStrEndB(sCheck, sMatch, 11, Cmp, 18)
+    lres = InStrEnd(sCheck, sMatch, 6, cmp, 9)
+    lres2 = InStrEndB(sCheck, sMatch, 11, cmp, 18)
     Stop
 End Sub
 Private Sub TestiRef()

@@ -14,20 +14,20 @@ Option Explicit
 '    prvPtr As LongPtr
 '    nxtPtr As LongPtr
 'End Type
-'Private Type tpCollection
-'    pInterface1         As IUnknown            ' // 0x00
-'    pInterface2         As IUnknown            ' // 0x04
-'    pInterface3         As IUnknown            ' // 0x08
-'    lRefCounter         As Long                ' // 0x0C
-'    lNumOfItems         As Long                ' // 0x10
-'    pvUnk1              As LongPtr             ' // 0x14
-'    pFirstIndexedItem   As LongPtr             ' // 0x18
-'    pLastIndexedItem    As LongPtr             ' // 0x1C
-'    pvUnk4              As LongPtr             ' // 0x20
-'    pFirstItem          As LongPtr             ' // 0x24
-'    pRootItem           As LongPtr             ' // 0x28
-'    pvUnk5              As LongPtr             ' // 0x2C
-'End Type
+Private Type tCollDescr
+    pInterface1         As IUnknown            ' // 0x00
+    pInterface2         As IUnknown            ' // 0x04
+    pInterface3         As IUnknown            ' // 0x08
+    lRefCounter         As Long                ' // 0x0C
+    lCount              As Long                ' // 0x10
+    pvUnk1              As LongPtr             ' // 0x14
+    pFirstIndexedItem   As LongPtr             ' // 0x18
+    pLastIndexedItem    As LongPtr             ' // 0x1C
+    pvUnk4              As LongPtr             ' // 0x20
+    pFirstItem          As LongPtr             ' // 0x24
+    pRootItem           As LongPtr             ' // 0x28
+    pvUnk5              As LongPtr             ' // 0x2C
+End Type
 Private Type tCollItem
     vItem         As Variant    '0  0   0
     sKey          As String     '16 10  24
@@ -48,7 +48,7 @@ Private Type GatherKeysInOrderStack
 End Type
 
 Private CollItemRef() As tCollItem, CollItemRef_SA As SA1D, CollItemRef2() As tCollItem, CollItemRef2_SA As SA1D
-'Private tCollRef() As tpCollection, tCollRef_SA As SA1D
+Private CollDescRef() As tCollDescr, CollDescRef_SA As SA1D
 Private isCollItemRefInit As Boolean
 '#If Win64 Then
 '    Private Const RightOffset = 64
@@ -59,7 +59,7 @@ Private isCollItemRefInit As Boolean
     Private Const LeftOffset = RightOffset + ptrSz '40
 '    Private Const collItemOffset = 24
 '#End If
-Const NullPtr As LongPtr = 0
+Public Const NullPtr As LongPtr = 0
 
 Private Sub Example()
     Dim coll As New VBA.Collection
@@ -97,13 +97,13 @@ Private Sub Example()
 End Sub
 
 Private Sub InitCollItemRef()
-    Dim tciTmp As tCollItem ', tcTmp As tpCollection
+    Dim tciTmp As tCollItem, tcTmp As tCollDescr
     If isCollItemRefInit Then Exit Sub
     If IsInitialized Then Else Initialize
     
     MakeRef CollItemRef_SA, VarPtr(CollItemRef_SA) - ptrSz, LenB(tciTmp)
     MakeRef CollItemRef2_SA, VarPtr(CollItemRef2_SA) - ptrSz, LenB(tciTmp)
-'    MakeRef tCollRef_SA, VarPtr(tCollRef_SA) - ptrSz, LenB(tcTmp)
+    MakeRef CollDescRef_SA, VarPtr(CollDescRef_SA) - ptrSz, LenB(tcTmp)
     
     isCollItemRefInit = True
 End Sub
@@ -142,6 +142,49 @@ Function CollKeys(coll As VBA.Collection) As String()
     CollItemRef_SA.pData = 0
     
     CollKeys = keys
+End Function
+Function CollJoinedKeys(coll As VBA.Collection, Optional Dlm$ = " ") As String
+    Dim i&, sRes$, resLen&, dlmLen&, newLen&, maxLen&, keyLen&
+    Dim pRes As LongPtr, pDst As LongPtr, stpInc&
+    If isCollItemRefInit Then Else InitCollItemRef
+    
+    dlmLen = LenB(Dlm)
+    CollDescRef_SA.pData = ObjPtr(coll)
+    With CollDescRef(0)
+      If .lCount Then Else GoTo endFn
+      stpInc = 8
+      CollItemRef_SA.pData = .pFirstIndexedItem
+      sRes = CollItemRef(0).sKey ': Debug.Print StrPtr(sRes)
+      pDst = StrPtr(sRes)
+      resLen = LenB(sRes)
+      For i = 2 To CollDescRef(0).lCount
+          CollItemRef_SA.pData = CollItemRef(0).pNext
+          With CollItemRef(0)
+            keyLen = LenB(.sKey)
+            newLen = resLen + dlmLen + keyLen
+            If newLen > maxLen Then
+                Do
+                    maxLen = maxLen + stpInc
+                    stpInc = stpInc * 2
+                Loop While newLen > maxLen
+                ReallocStringB sRes, maxLen ': Debug.Print StrPtr(sRes)
+                pRes = StrPtr(sRes)
+            End If
+            pDst = pRes + resLen
+            PutStrBuf pDst, Dlm
+            pDst = pDst + dlmLen
+            PutStrBuf pDst, .sKey
+            
+            resLen = newLen
+          End With
+      Next
+    End With
+    ReallocStringB sRes, resLen ': Debug.Print StrPtr(sRes)
+    
+    MoveStr CollJoinedKeys, sRes
+endFn:
+    CollItemRef_SA.pData = 0
+    CollDescRef_SA.pData = 0
 End Function
 Function CollItems(coll As VBA.Collection) As Variant()
     Dim Items(), i&, Ub&, Key$
@@ -231,6 +274,7 @@ Function CollRemoveByKey(Key As String, Col As VBA.Collection) As Boolean
             Col.Remove lIndex
             CollItemRef_SA.pData = 0
             CollRemoveByKey = True: Exit Function 'RETURN
+            
         Case Else: pItem = CollItemRef(0).pRight  'если больше
         End Select
         CollItemRef_SA.pData = pItem
@@ -263,6 +307,7 @@ Function CollKeyIndex(Key As String, Col As VBA.Collection) As Long
             CollKeyIndex = lIndex 'RETURN
             CollItemRef_SA.pData = 0
             Exit Function
+            
         Case Else: pItem = CollItemRef(0).pRight  'если больше
         End Select
         CollItemRef_SA.pData = pItem
@@ -325,6 +370,17 @@ Private Sub GatherKeysInOrder(ByVal pItem As LongPtr, sKeys() As String, argStac
     End With
 End Sub
 
+
+Private Sub Test_CollJoinedKeys()
+    Dim coll As New Collection
+    Dim s$
+    coll.Add "item1", "key1"
+    coll.Add "item2", "key2"
+    coll.Add "item3", "key3"
+    coll.Add "item4", "key4"
+
+    s = CollJoinedKeys(coll)
+End Sub
 
 'Function CollKeys(coll As VBA.Collection) As String()
 '    Dim i&, pItem As LongPtr, Key$, pKey As LongPtr
