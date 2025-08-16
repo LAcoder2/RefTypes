@@ -89,6 +89,35 @@ Exit Sub
 errArgum:
     Err.Raise 5, , "Arguments error!"
 End Sub
+Private Sub Test_RedimPreserve2DVectorV()
+    Dim vArr()
+    ReDim vArr(1 To 5, 1 To 1)
+    
+    RedimPreserve2DColumnVectorV vArr, 10
+End Sub
+Sub RedimPreserve2DColumnVectorV(vAry(), ByVal newBound As LongPtr)
+    Dim colCnt&, collBnd&
+    If isArrHlpInit Then Else InitArrHlp
+    
+    sa2dRef_SA.pData = ArrPtrV(vAry, True)
+    With sa2dRef(0)
+      If .Dims = 2 Then Else GoTo errArgum  'isn't 2d
+      .Dims = 1
+      If .ColCount = 1 Then Else: GoTo errArgum 'isn't ColumnVector
+      colCnt = .ColCount
+      collBnd = .CollBound
+      .ColCount = .RowCount
+      .CollBound = .RowlBound
+      ReDim Preserve vAry(.RowlBound To newBound)
+      .RowCount = newBound
+      .ColCount = colCnt
+      .CollBound = collBnd
+      .Dims = 2
+    End With
+Exit Sub
+errArgum:
+    Err.Raise 5, , "Arguments error!"
+End Sub
 Sub Test_vAry1Dto2D_2Dto1D()
     Dim vAry()
     
