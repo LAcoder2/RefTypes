@@ -1,6 +1,7 @@
 Attribute VB_Name = "ArrayHelp"
 Option Explicit
 
+#Const SafeMode = True
 Public Type SABounds
     Count As Long
     lBound As Long
@@ -54,6 +55,58 @@ Exit Function
 errArgum:
     Err.Raise 5, , "Arguments error!"
 End Function
+Function SplitV(sSrc$, Optional sDlm$ = " ", Optional ByVal cmp As VbCompareMethod) As Variant()
+    Dim lnSrc&, lnDlm&, curPos&, prevPos&, vArOut(), Ub&, maxCnt&
+    Dim pSrc As LongPtr, pStr As LongPtr, szStr&, vSrc, vDlm
+    lnSrc = Len(sSrc): lnDlm = Len(sDlm)
+    
+    maxCnt = -1
+    prevPos = 1
+    pSrc = StrPtr(sSrc)
+  #If SafeMode Then
+    vSrc = StrMoveVar(sSrc)
+  #Else
+    Dim pTmp As LongPtr
+    vSrc = vbNullString
+    pTmp = VarPtr(vSrc) + 8
+    PutPtr(pTmp) = StrPtr(sSrc)
+  #End If
+    vDlm = sDlm
+    Do
+        curPos = InStr((prevPos), vSrc, vDlm, cmp)
+        If curPos Then
+            If Ub < maxCnt Then
+            Else
+                maxCnt = Ub * 2 + 1
+                ReDim Preserve vArOut(maxCnt - 1)
+            End If
+            pStr = pSrc + (prevPos - 1) * 2
+            szStr = (curPos - prevPos) * 2
+            vArOut(Ub) = VbaMemAllocStringByteLen(pStr, szStr)
+            Ub = Ub + 1
+        Else
+            If prevPos > 1 Then
+                If prevPos < lnSrc Then
+                    pStr = pSrc + (prevPos - 1) * 2
+                    szStr = (lnSrc - prevPos + 1) * 2
+                    ReDim Preserve vArOut(Ub)
+                    vArOut(Ub) = VbaMemAllocStringByteLen(pStr, szStr)
+                Else: ReDim Preserve vArOut(Ub)
+                End If
+            End If
+            Exit Do
+        End If
+        prevPos = curPos + lnDlm
+    Loop
+  #If SafeMode Then
+    sSrc = VarMoveStr(vSrc)
+  #Else
+    PutPtr(pTmp) = 0
+  #End If
+    
+    SplitV = vArOut
+End Function
+
 Sub vAry2Dto1D(vAry())
     If isArrHlpInit Then Else InitArrHlp
     sa2dRef_SA.pData = ArrPtrV(vAry, True)
@@ -89,12 +142,6 @@ Exit Sub
 errArgum:
     Err.Raise 5, , "Arguments error!"
 End Sub
-Private Sub Test_RedimPreserve2DVectorV()
-    Dim vArr()
-    ReDim vArr(1 To 5, 1 To 1)
-    
-    RedimPreserve2DColumnVectorV vArr, 10
-End Sub
 Sub RedimPreserve2DColumnVectorV(vAry(), ByVal newBound As LongPtr)
     Dim colCnt&, collBnd&
     If isArrHlpInit Then Else InitArrHlp
@@ -118,16 +165,6 @@ Exit Sub
 errArgum:
     Err.Raise 5, , "Arguments error!"
 End Sub
-Sub Test_vAry1Dto2D_2Dto1D()
-    Dim vAry()
-    
-    ReDim vAry(4, 3)
-    Debug.Print ArrPtrV(vAry(), True)
-    vAry2Dto1D vAry
-    Debug.Print ArrPtrV(vAry(), True)
-    vAry1Dto2D vAry, ColumnVector
-    Debug.Print ArrPtrV(vAry(), True)
-End Sub
 
 Function SAAllocDescr(ByVal Dims As Integer) As LongPtr
     Const szBnds& = 8
@@ -150,6 +187,32 @@ Function SAAllocDescr(ByVal Dims As Integer) As LongPtr
     End With
 End Function
 
+Private Sub Test_SplitB()
+    Dim s$, vAr(), sAr$(), s2$
+    Initialize
+    
+    s = "kjsdf uouo eweqewq xzzcc"
+    
+    vAr = SplitV(s)
+    sAr = Split(s)
+    s2 = Join(sAr)
+End Sub
+Private Sub Test_RedimPreserve2DVectorV()
+    Dim vArr()
+    ReDim vArr(1 To 5, 1 To 1)
+    
+    RedimPreserve2DColumnVectorV vArr, 10
+End Sub
+Sub Test_vAry1Dto2D_2Dto1D()
+    Dim vAry()
+    
+    ReDim vAry(4, 3)
+    Debug.Print ArrPtrV(vAry(), True)
+    vAry2Dto1D vAry
+    Debug.Print ArrPtrV(vAry(), True)
+    vAry1Dto2D vAry, ColumnVector
+    Debug.Print ArrPtrV(vAry(), True)
+End Sub
 Private Sub Test_SAAllocDescr()
     Dim pDesc As LongPtr
     pDesc = SAAllocDescr(2)
@@ -162,7 +225,6 @@ Private Sub Test_JoinV2D()
     sRes = JoinV2D(arr, vbLf)
     Debug.Print sRes
 End Sub
-
 Private Sub TestSA2D()
     Dim arr(), pArr As LongPtr, pSA As LongPtr, SA As SA2D, sTmp$
     ReDim arr(1 To 5, 1 To 2)
@@ -174,5 +236,4 @@ Private Sub TestSA2D()
     
 '    MemLSet VarPtr(SA), pSA, LenB(SA)
     sa2dRef_SA.pData = pSA
-    
 End Sub
