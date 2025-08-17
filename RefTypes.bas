@@ -135,7 +135,7 @@ Public vlpRef() As lpVariant
 Public vdRef() As dVariant
 Public vdtRef() As dtVariant
 Public viRef() As iVariant
-'Public vsRef() As sVariant '.Locks = 1 does not work
+Public vsRef() As sVariant, pvsRef As LongPtr '.Locks = 1 does not work, pvsRef = ArrPtr(vsRef)
 'End Union
 Public vRef2() As Variant, vRef2_SA As SA1D
 Public unkRef() As IUnknown, unkRef_SA As SA1D
@@ -217,6 +217,7 @@ Sub Initialize()
       PutPtr(pArr) = VarPtr(vRef_SA) 'vdtRef()
     pArr = pArr + ptrSz
       PutPtr(pArr) = VarPtr(vRef_SA) 'viRef()
+    pvsRef = pArr + ptrSz
     
     MakeRef vRef2_SA, VarPtr(vRef2_SA) - ptrSz, varSz
     MakeRef oRef_SA, VarPtr(oRef_SA) - ptrSz, ptrSz
@@ -532,6 +533,14 @@ Function ArrPtrI(iAry() As Integer, Optional ByVal GetDesc As Boolean) As LongPt
     If GetDesc Then lpRef2_SA.pData = lpRef2(0)
     ArrPtrI = lpRef2(0)
 End Function
+Function ArrPtrV(vAry(), Optional ByVal GetDesc As Boolean) As LongPtr
+  #If Not PreInitMode Then
+    If IsInitialized Then Else Initialize
+  #End If
+    lpRef2_SA.pData = VarPtr(GetDesc) - ptrSz
+    If GetDesc Then lpRef2_SA.pData = lpRef2(0)
+    ArrPtrV = lpRef2(0)
+End Function
 
 'перемещение указателя (передача владения)
 Sub MovePtr(ByVal pDst As LongPtr, ByVal pSrc As LongPtr)
@@ -685,7 +694,8 @@ Function VbaMemAlloc(ByVal size As LongPtr) As LongPtr
     saRef_SA.pData = lpRef(0)
     With saRef(0)
       VbaMemAlloc = .pData ' = VarPtr(bMap(0))
-      .pData = 0
+      .pData = NullPtr
+'      .Count = 0&
     End With
 End Function
 'Sub VbaMemFree2(ByVal ptr As LongPtr)
@@ -1729,33 +1739,45 @@ Function Join2(sArr() As String, Optional sDlm$ = " ") As String
 End Function
 
 'http://www.excelworld.ru/board/vba/tricks/sort_array_shell/9-1-0-32
-Sub ShellSortS(Arr() As String, _
+Sub ShellSortS(arr() As String, _
     Optional ByVal Order As SortOrder = Ascending, Optional ByVal Comp As VbCompareMethod)
-    Dim Limit&, Switch&, i&, j&, ij&, Ub&
+    Dim limit&, Switch&, i&, j&, ij&, Ub&
   #If Not PreInitMode Then
     If IsInitialized Then Else Initialize
   #End If
     
-    Ub = UBound(Arr)
+    Ub = UBound(arr)
     j = (Ub + 1) \ 2
     Do While j > 0
-        Limit = Ub - j
+        limit = Ub - j
         Do
             Switch = -1
-            For i = 0 To Limit
+            For i = 0 To limit
                 ij = i + j
-                If StrComp(Arr(i), Arr(ij), Comp) = Order Then
-                    SwapPtr VarPtr(Arr(i)), VarPtr(Arr(ij))
+                If StrComp(arr(i), arr(ij), Comp) = Order Then
+                    SwapPtr VarPtr(arr(i)), VarPtr(arr(ij))
                     Switch = i
                 End If
             Next
-            Limit = Switch - j
+            limit = Switch - j
         Loop While Switch >= 0
         j = j \ 2
     Loop
 End Sub
 
 '>>>>>>>>>>>TESTS<<<<<<<<<<<<<
+Private Sub TestWithRef()
+    Dim d1, d2
+    Initialize
+    d1 = 123.456
+    d2 = 111.222
+    vRef_SA.pData = VarPtr(d1)
+    With vdRef(0)
+        Debug.Print .val
+        vRef_SA.pData = VarPtr(d2)
+        Debug.Print .val
+    End With
+End Sub
 Private Sub Test_Levenshtein_Distance()
     Debug.Print LevenshteinDistance("Excel", "ExcelOper")
 End Sub
@@ -2012,12 +2034,17 @@ Private Sub Test_VariantUnion()
     vlp = VarPtr(vlp)
     vd = 3343.0809
     
-'    vRef_SA.pData = VarPtr(vs)
-'    Debug.Print vsRef(0).val
+    PutPtr(pvsRef) = VarPtr(vRef_SA)
+      vRef_SA.pData = VarPtr(vs)
+      Debug.Print vsRef(0).val
+    PutPtr(pvsRef) = NullPtr
+    
     vRef_SA.pData = VarPtr(vbl)
     Debug.Print viRef(0).val
+    
     vRef_SA.pData = VarPtr(vlp)
     Debug.Print vlpRef(0).val
+    
     vRef_SA.pData = VarPtr(vd)
     Debug.Print vdRef(0).val
 End Sub
@@ -2072,6 +2099,17 @@ Private Sub Test_RefStr()
 '    Erase ref
     Debug.Print ref(0)
 End Sub
+''Тест передачи указателя от строковой функцции в вариант
+''по результату строка не копируется при передаче варианту
+'Private Sub TestStrPtr()
+'    Dim vs
+'    vs = sfn
+'    Debug.Print StrPtr(vs)
+'End Sub
+'Private Function sfn() As String
+'    sfn = "adfasdf"
+'    Debug.Print StrPtr(sfn)
+'End Function
 'Function InStrLenRevNS(sCheck$, sMatch$, ByVal Start As Long, _
 '    Optional ByVal Compare As VbCompareMethod, Optional ByVal lenFind As Long = -1) As Long
 '    Dim sTmp$, pTmp As LongPtr, lTmp&, lOff&, lRet&

@@ -66,10 +66,10 @@ Function SplitV(sSrc$, Optional sDlm$ = " ", Optional ByVal cmp As VbCompareMeth
   #If SafeMode Then
     vSrc = StrMoveVar(sSrc)
   #Else
-    Dim pTmp As LongPtr
+    Dim pvTmpStr As LongPtr
     vSrc = vbNullString
-    pTmp = VarPtr(vSrc) + 8
-    PutPtr(pTmp) = StrPtr(sSrc)
+    pvTmpStr = VarPtr(vSrc) + 8
+    PutPtr(pvTmpStr) = StrPtr(sSrc)
   #End If
     vDlm = sDlm
     Do
@@ -101,7 +101,7 @@ Function SplitV(sSrc$, Optional sDlm$ = " ", Optional ByVal cmp As VbCompareMeth
   #If SafeMode Then
     sSrc = VarMoveStr(vSrc)
   #Else
-    PutPtr(pTmp) = 0
+    PutPtr(pvTmpStr) = 0
   #End If
     
     SplitV = vArOut
@@ -186,6 +186,34 @@ Function SAAllocDescr(ByVal Dims As Integer) As LongPtr
         .Features = &H80
     End With
 End Function
+
+Private Sub TestAppendVectorV()
+    Dim vAr1(), vAr2()
+    
+    vAr1 = Array(1, "fadfaf", 2, 44)
+    vAr2 = Array(5, 333.444, "jupou")
+    
+    AppendMoveVectorV vAr1, vAr2
+End Sub
+'Добавить данные в массив vAryDst из массива vArySrc с их перемещением и освобождением vArySrc
+Sub AppendMoveVectorV(vAryDst(), vArySrc())
+    Dim pSrcSA As LongPtr, vArEmp()
+    If ArrPtrV(vAryDst, True) Then
+        pSrcSA = ArrPtrV(vArySrc, True)
+        If pSrcSA Then Else Exit Sub
+    Else: Exit Sub
+    End If
+    Dim ubDst&, lbSrc&, ubSrc&, cntSrc&, szSrc
+    ubDst = UBound(vAryDst)
+    lbSrc = LBound(vArySrc)
+    ubSrc = UBound(vArySrc)
+    cntSrc = ubSrc - lbSrc + 1
+    ReDim Preserve vAryDst(LBound(vAryDst) To ubDst + cntSrc)
+    MemLSet VarPtr(vAryDst(ubDst + 1)), VarPtr(vArySrc(lbSrc)), cntSrc * varSz
+    saRef_SA.pData = pSrcSA
+    saRef(0).Count = 0
+    vArySrc = vArEmp   'Erase vArySrc
+End Sub
 
 Private Sub Test_SplitB()
     Dim s$, vAr(), sAr$(), s2$
